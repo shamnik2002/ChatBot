@@ -13,6 +13,7 @@ final class AppStore {
     let appState: AppState
     let appMiddleWare: AppMiddleware
     let dispacther: Dispatcher
+    static let shared = AppStore()
     
     init() {
         self.dispacther = Dispatcher()

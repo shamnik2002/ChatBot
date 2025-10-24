@@ -32,7 +32,7 @@ struct ConversationListView: View {
                 Text(item.title)
             }
         }.navigationDestination(for: Conversation.self) { item in
-            ContentView(viewModel: ContentViewModel(appStore: AppStore()))
+            ContentView(viewModel: ContentViewModel(appStore: AppStore.shared))
         }
     }
 }
