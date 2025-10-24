@@ -117,12 +117,12 @@ extension Date {
     }
 }
 
-func randomStringGenerator(count: Int) -> [String] {
+func randomStringGenerator(count: Int, minStringLength: Int = 500, maxStringLength: Int = 1000) -> [String] {
     var strings = [String]()
     let letters = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     
     for _ in 0..<count {
-        let length = (500...1000).randomElement() ?? 5
+        let length = (minStringLength...maxStringLength).randomElement() ?? 5
         let str = String((0..<length).map{ _ in letters.randomElement()! })
         strings.append(str)
     }

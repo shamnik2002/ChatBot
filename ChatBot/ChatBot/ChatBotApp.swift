@@ -11,7 +11,8 @@ import SwiftUI
 struct ChatBotApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView(viewModel: ContentViewModel(appStore: AppStore()))
+            //ContentView(viewModel: ContentViewModel(appStore: AppStore()))
+            MainTabView()
         }
     }
 }
