@@ -23,13 +23,24 @@ struct GetOldChatResponses: GetChat {
 
 protocol SetChat: ReduxMutatingAction {}
 struct SetChatResponse: SetChat {
-    let response: ChatResponse
+    let response: OpenAIResponse
 }
 
 struct SetOldChatResponses: SetChat {
-    let responses: [ChatResponse]
+    let responses: [OpenAIResponse]
 }
 
 struct SetUserChatMessage: SetChat {
     let chatDataModel: ChatDataModel
+}
+
+protocol ConversationAction: ReduxAction {}
+protocol ConversationUpdateAction: ReduxMutatingAction {}
+
+protocol GetConversationList: ConversationAction {
+    
+}
+
+protocol SetConversationList: ConversationUpdateAction {
+    
 }

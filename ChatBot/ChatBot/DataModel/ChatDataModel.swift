@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-nonisolated class ChatCollectionViewDataItem: Hashable, @unchecked Sendable {
+nonisolated class ChatCollectionViewDataItem: Hashable, @unchecked Sendable, Codable {
     
     let id: String
     
@@ -26,6 +26,7 @@ nonisolated class ChatCollectionViewDataItem: Hashable, @unchecked Sendable {
 }
 
 nonisolated final class ChatDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
+    
     let text: String
     let date: TimeInterval
     let type: ChatResponseRole
@@ -36,6 +37,10 @@ nonisolated final class ChatDataModel: ChatCollectionViewDataItem, @unchecked Se
         self.type = type
         super.init(id: id)
     }
+    
+    required init(from decoder: any Decoder) throws {
+        fatalError("init(from:) has not been implemented")
+    }
 }
 
 nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
@@ -44,5 +49,20 @@ nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Se
     init(id: String, date: TimeInterval) {
         self.date = date
         super.init(id: id)
+    }
+    
+    required init(from decoder: any Decoder) throws {
+        fatalError("init(from:) has not been implemented")
+    }
+}
+
+nonisolated final class ConversationDataModel: Codable {
+    
+    let id: String
+    let chats:[ChatDataModel]
+    
+    init(id: String, chats: [ChatDataModel]) {
+        self.id = id
+        self.chats = chats
     }
 }
