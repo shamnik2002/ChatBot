@@ -13,7 +13,8 @@ final class ConversationState {
     private let dispatch: Dispatch
     
     private(set) var conversationListPublisher = PassthroughSubject<[ConversationDataModel], Never>()
-    
+    private(set) var conversationPublisher = PassthroughSubject<ConversationDataModel, Never>()
+
     private var cancellables = Set<AnyCancellable>()
     
     init(dispatch: @escaping Dispatch, listner: AnyPublisher<ConversationUpdateAction?, Never>) {
@@ -27,7 +28,10 @@ final class ConversationState {
     func handle(action: ReduxMutatingAction?) {
         switch action {
             case let action as SetConversationList:
-           
+                conversationListPublisher.send(action.conversationlist)
+            case let action as SetConversation:
+                conversationPublisher.send(action.conversation)
+                break
             default:
                 break
         }

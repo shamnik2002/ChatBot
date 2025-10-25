@@ -37,10 +37,19 @@ struct SetUserChatMessage: SetChat {
 protocol ConversationAction: ReduxAction {}
 protocol ConversationUpdateAction: ReduxMutatingAction {}
 
-protocol GetConversationList: ConversationAction {
+struct GetConversationList: ConversationAction {
     
 }
 
-protocol SetConversationList: ConversationUpdateAction {
-    
+struct SetConversationList: ConversationUpdateAction {
+    let conversationlist: [ConversationDataModel]
+}
+
+struct CreateConversation: ConversationAction {
+    let id: String
+    let chats: [ChatDataModel]
+}
+
+struct SetConversation: ConversationUpdateAction {
+    let conversation: ConversationDataModel
 }

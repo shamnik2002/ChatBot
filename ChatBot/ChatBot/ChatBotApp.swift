@@ -12,7 +12,7 @@ struct ChatBotApp: App {
     var body: some Scene {
         WindowGroup {
             //ContentView(viewModel: ContentViewModel(appStore: AppStore()))
-            MainTabView()
+            MainTabView(viewModel: MainTabViewModel(appStore: AppStore.shared))
         }
     }
 }

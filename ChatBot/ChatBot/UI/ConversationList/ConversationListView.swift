@@ -16,14 +16,27 @@ struct Conversation: Identifiable, Hashable {
 final class ConversationListViewModel: ObservableObject {
     @Published var items: [Conversation] = []
     
-    init() {
-        items = mockConversationList()
+    private var cancellables = Set<AnyCancellable>()
+    private var appStore: AppStore
+    init(appStore: AppStore) {
+        self.appStore = appStore
+//        items = mockConversationList()
+        self.appStore.conversationState.conversationListPublisher
+            .receive(on: RunLoop.main)
+            .sink { conversationList in
+                
+            }.store(in: &cancellables)
     }
     
+    func fetchConversations() {
+        
+    }
+
 }
+
 struct ConversationListView: View {
     
-    @StateObject var viewModel = ConversationListViewModel()
+    @StateObject var viewModel:ConversationListViewModel
     
     var body: some View {
         List(viewModel.items) { item in

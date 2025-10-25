@@ -33,13 +33,13 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     init(appStore: AppStore, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>) {
         self.appStore = appStore
         self.dataProcessor = dataProcessor
-        self.appStore.appState.responsesPublisher.receive(on: RunLoop.main)
+        self.appStore.chatState.responsesPublisher.receive(on: RunLoop.main)
             .sink {[weak self] chatResponses in
                 self?.isLoading = false
                 self?.processResponse(chatResponses)
             }.store(in: &cancellables)
         
-        self.appStore.appState.userChatMessagePublisher.receive(on: RunLoop.main)
+        self.appStore.chatState.userChatMessagePublisher.receive(on: RunLoop.main)
             .sink {[weak self] chatDataModel in
                 self?.processUserChatData(chatDataModel)
             }.store(in: &cancellables)

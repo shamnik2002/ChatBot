@@ -8,11 +8,12 @@ import SwiftUI
 import Combine
 
 struct HomeView: View {
-    @State private var isShowingDetail = false
+
+    @StateObject var homeViewModel: HomeViewModel
     
     var body: some View {
         NavigationStack {
-            ConversationListView()
+            ConversationListView(viewModel: ConversationListViewModel(appStore: homeViewModel.appStore))
             .navigationTitle("Home")
             .toolbar {
                 ToolbarItem(id: "New", placement: .topBarTrailing) {

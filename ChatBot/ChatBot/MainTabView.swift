@@ -7,10 +7,21 @@
 import SwiftUI
 import Combine
 
+final class MainTabViewModel: ObservableObject {
+    private(set) var appStore: AppStore
+    
+    init(appStore: AppStore) {
+        self.appStore = appStore
+    }
+}
+
 struct MainTabView: View {
+    
+    @StateObject var viewModel: MainTabViewModel
+    
     var body: some View {
         TabView {
-            HomeView()
+            HomeView(homeViewModel: HomeViewModel(appStore: viewModel.appStore))
                 .tabItem {
                     Label("Home", systemImage: "house")
                 }

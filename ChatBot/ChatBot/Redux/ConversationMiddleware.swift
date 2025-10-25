@@ -26,14 +26,29 @@ final class ConversationMiddleware {
         case let action as GetConversationList:
             fetchConversationList()
             break
-        
+        case let action as CreateConversation:
+            createConversation(id: action.id, chats: action.chats)
+            break
         default:
             break
         }
     }
     
     func fetchConversationList() {
-        
+        Task {
+            let conversationList = await cache.getConversations()
+            let conversationUpdateAction = SetConversationList(conversationlist: conversationList)
+            dispatch(conversationUpdateAction)
+        }
     }
     
+    func createConversation(id: String, chats: [ChatDataModel]) {
+        Task {
+            let conversation = ConversationDataModel(id: id, chats: chats)
+            await cache.addConversation(conversation)
+            fetchConversationList()
+        }
+        
+    }
 }
+
