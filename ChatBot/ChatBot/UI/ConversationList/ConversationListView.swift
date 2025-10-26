@@ -14,7 +14,7 @@ struct Conversation: Identifiable, Hashable {
 }
 
 final class ConversationListViewModel: ObservableObject {
-    @Published var items: [Conversation] = []
+    @Published var items: [ConversationDataModel] = []
     
     private var cancellables = Set<AnyCancellable>()
     private var appStore: AppStore
@@ -23,8 +23,9 @@ final class ConversationListViewModel: ObservableObject {
 //        items = mockConversationList()
         self.appStore.conversationState.conversationListPublisher
             .receive(on: RunLoop.main)
-            .sink { conversationList in
-                
+            .sink {[weak self] conversationList in
+                guard !conversationList.isEmpty else { return }
+                self?.items = conversationList
             }.store(in: &cancellables)
     }
     
@@ -44,8 +45,8 @@ struct ConversationListView: View {
             NavigationLink(value: item) {
                 Text(item.title)
             }
-        }.navigationDestination(for: Conversation.self) { item in
-            ContentView(viewModel: ContentViewModel(appStore: AppStore.shared))
+        }.navigationDestination(for: ConversationDataModel.self) { item in
+            ChatContainerView(viewModel: ChatContainerViewModel(appStore: AppStore.shared, conversationDataModel: item))
         }
     }
 }

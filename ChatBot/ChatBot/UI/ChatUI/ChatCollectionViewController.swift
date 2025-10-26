@@ -79,7 +79,7 @@ final class ChatCollectionViewController: UIViewController {
                 self?.reloadChats(chats: chats, type: type)
             }.store(in: &cancellables)
         
-//        viewModel.fetchChats()        
+        viewModel.fetchChats()        
     }
     
     func applySnapshot() {

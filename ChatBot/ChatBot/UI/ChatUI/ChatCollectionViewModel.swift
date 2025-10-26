@@ -29,48 +29,44 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     private var appStore: AppStore
     private var isLoading = false
     private var dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>
+    private var conversationDataModel: ConversationDataModel
     
-    init(appStore: AppStore, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>) {
+    init(appStore: AppStore, conversationDataModel: ConversationDataModel, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>) {
         self.appStore = appStore
+        self.conversationDataModel = conversationDataModel
         self.dataProcessor = dataProcessor
+        
+        processResponse(ChatResponses(conversationID: conversationDataModel.id, chats: conversationDataModel.chats, responseType: .new))
         self.appStore.chatState.responsesPublisher.receive(on: RunLoop.main)
-            .sink {[weak self] chatResponses in
+            .sink {[weak self] chatResponse in
+                guard conversationDataModel.id == chatResponse.conversationID else {return}
                 self?.isLoading = false
-                self?.processResponse(chatResponses)
+                self?.processResponse(chatResponse)
             }.store(in: &cancellables)
         
         self.appStore.chatState.userChatMessagePublisher.receive(on: RunLoop.main)
-            .sink {[weak self] chatDataModel in
-                self?.processUserChatData(chatDataModel)
+            .sink {[weak self] (convoID, chatDataModel) in
+                guard let self else {return}
+                guard convoID == self.conversationDataModel.id else {return }
+                
+                self.processUserChatData(chatDataModel)
             }.store(in: &cancellables)
     }
     
     func fetchChats() {
-        guard !isLoading else {return}
-        isLoading = true
-        let getOldChats = GetOldChatResponses()
-        self.appStore.dispacther.dispatch(getOldChats)
+        internalChatsPublisher.send((self.chatCollectionViewDataItems, .appended))
     }
     
     func fetchOldChats() {
         guard !isLoading else {return}
         isLoading = true
-        let getOldChats = GetOldChatResponses()
+        let getOldChats = GetOldChatResponses(conversationID: conversationDataModel.id)
         self.appStore.dispacther.dispatch(getOldChats)
     }
     
-    func processResponse(_ chatResponses:ChatResponses) {
+    func processResponse(_ chatResponse:ChatResponses) {
     
-        var chats = [ChatDataModel]()
-        for response in chatResponses.responses {
-            let output = response.output.filter{$0.type == "message"}.first
-            guard let output else {continue}
-            guard let content = output.content?.first else {continue}
-            let outputRole = output.role ?? "assistant"
-            let role = ChatResponseRole(rawValue: outputRole) ?? .assistant
-            let chat = ChatDataModel(id: output.id , text: content.text, date: response.created_at, type: role)
-            chats.append(chat)
-        }
+        let chats = chatResponse.chats
         guard !chats.isEmpty else {return}
         
         var chatsUpdateType: ChatsUpdateType = .appended
@@ -106,6 +102,7 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
             
         } else {
             // first batch likely
+            let chatCollectionViewDataItems = dataProcessor.process(data: chats, lookupData: [])
             self.chatCollectionViewDataItems.append(contentsOf: chatCollectionViewDataItems)
         }
 

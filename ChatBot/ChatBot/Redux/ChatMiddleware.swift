@@ -15,11 +15,13 @@ final class ChatMiddleware {
     private let parser: ParseProtocol
     private var cancellables = Set<AnyCancellable>()
     private let dispatch: Dispatch
+    private let cache: CBCache
     
-    init(dispatch: @escaping Dispatch, networkService: NetworkProtocol, parser: ParseProtocol, listner: AnyPublisher<GetChat?, Never>) {
+    init(dispatch: @escaping Dispatch, networkService: NetworkProtocol, parser: ParseProtocol, cache: CBCache, listner: AnyPublisher<GetChat?, Never>) {
         self.dispatch = dispatch
         self.networkService = networkService
         self.parser = parser
+        self.cache = cache
         
         listner.sink {[weak self] action in
             guard let action = action else { return }
@@ -27,71 +29,81 @@ final class ChatMiddleware {
         }.store(in: &cancellables)
     }
     
-    func handle(action: ReduxAction) {
+    private func handle(action: ReduxAction) {
         switch action {
             case let action as GetChatResponse:
-                addUserMessage(input: action.input)
-                fetchMockResponse()
-//                fetchResponses(input: action.input)
+            addUserMessage(input: action.input, conversationID: action.conversationID)
+            fetchMockResponse(conversationID: action.conversationID)
+//            fetchResponses(input: action.input, conversationID: action.conversationID)
                 break
         case let action as GetOldChatResponses:
-            fetchMockResponses()
+            fetchMockResponses(conversationID: action.conversationID)
             default:
                 break
         }
     }
     
-    func fetchResponses(input: String) {
+    private func fetchResponses(input: String, conversationID: String) {
         let request = ResponsesRequest(input: input)
         let parser = parser
-        let dispatch = dispatch
         networkService.fetchDataWithPublisher(request: request)
             .flatMap { data in
                 return parser.parse(data: data, type: OpenAIResponse.self)
             }.sink { completion in
                 
-            } receiveValue: { result in
-                let setChatResponse = SetChatResponse(response: result)
-                dispatch(setChatResponse)
+            } receiveValue: {[weak self] result in
+                self?.processChatResponses(result, conversationID: conversationID)
             }.store(in: &cancellables)
     }
     
-    func addUserMessage(input: String) {
-        let date = ceil(Date().timeIntervalSince1970)
-        let userChat = ChatDataModel(id: UUID().uuidString, text: input, date: date, type: ChatResponseRole.user)
-        let setUserChatMessageAction = SetUserChatMessage(chatDataModel: userChat)
-        dispatch(setUserChatMessageAction)
+    private func processChatResponses(_ responses: OpenAIResponse, conversationID: String) {
+        Task {
+            let chats = ChatReponsesTransformer.chatDataModelFromOpenAIResponses(responses)
+            await cache.addChatsToConversation(chats, conversationID: conversationID)
+            let setChatResponse = SetChatResponse(conversationID: conversationID, chats: chats)
+            dispatch(setChatResponse)
+            let getConversationList = GetConversationList()
+            dispatch(getConversationList)
+        }
     }
     
-    func fetchMockResponses() {
+    private func addUserMessage(input: String, conversationID: String) {
+        Task {
+            let date = ceil(Date().timeIntervalSince1970)
+            let userChat = ChatDataModel(id: UUID().uuidString, text: input, date: date, type: ChatResponseRole.user)
+            await cache.addChatsToConversation([userChat], conversationID: conversationID)
+            let setUserChatMessageAction = SetUserChatMessage(conversationID: conversationID, chatDataModel: userChat)
+            dispatch(setUserChatMessageAction)
+            let getConversationList = GetConversationList()
+            dispatch(getConversationList)
+        }
+    }
+    
+    private func fetchMockResponses(conversationID: String) {
         
         Task {[weak self] in
-//            try? await Task.sleep(for: .seconds(1))
-            let oldChats = randomStringGenerator(count: 20)
-            var responses = [OpenAIResponse]()
+            let oldChatsText = randomStringGenerator(count: 20)
+            var chats = [ChatDataModel]()
             var delta:TimeInterval = 60*2
-            for chat in oldChats {
-                let content = OpenAIResponse.Output.Content(type: "output_text", text: chat)
-                let output = OpenAIResponse.Output(type: "message", id: UUID().uuidString, role: ChatResponseRole.assistant.rawValue, content: [content])
-                let response = OpenAIResponse(id: UUID().uuidString, created_at: mockDate.timeIntervalSince1970 - delta, output: [output])
-                responses.append(response)
+            for text in oldChatsText {
+                let date = mockDate.timeIntervalSince1970 - delta
+                chats.append(ChatDataModel(id: UUID().uuidString, text: text, date: date, type: .assistant))
                 delta -= 60*2
             }
-            let setResponsesAction = SetOldChatResponses(responses: responses)
+            let setResponsesAction = SetOldChatResponses(conversationID: conversationID, chats: chats)
             self?.dispatch(setResponsesAction)
             mockDate = mockDate.dayBefore
         }
         
     }
     
-    func fetchMockResponse() {
+    private func fetchMockResponse(conversationID: String) {
         Task {[weak self] in
             try? await Task.sleep(for: .seconds(2))
             guard let chatBotresponse = randomStringGenerator(count: 1).first else {return}
-            let content = OpenAIResponse.Output.Content(type: "output_text", text: chatBotresponse)
-            let output = OpenAIResponse.Output(type: "message", id: UUID().uuidString, role: ChatResponseRole.assistant.rawValue, content: [content])
-            let response = OpenAIResponse(id: UUID().uuidString, created_at: Date().timeIntervalSince1970, output: [output])
-            let setResponsesAction = SetChatResponse(response: response)
+            let chat = ChatDataModel(id: UUID().uuidString, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
+            await self?.cache.addChatsToConversation([chat], conversationID: conversationID)
+            let setResponsesAction = SetChatResponse(conversationID: conversationID, chats: [chat])
             self?.dispatch(setResponsesAction)
         }
     }

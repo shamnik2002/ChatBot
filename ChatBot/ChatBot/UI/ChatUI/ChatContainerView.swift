@@ -8,13 +8,13 @@
 import SwiftUI
 import Combine
 
-struct ContentView: View {
-    @StateObject var viewModel: ContentViewModel
+struct ChatContainerView: View {
+    @StateObject var viewModel: ChatContainerViewModel
     @State private var text: String = ""
     var body: some View {
         VStack {
             Spacer()
-            ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore)
+            ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore, conversationDataModel: viewModel.conversationDataModel)
                 .edgesIgnoringSafeArea(.all)
             HStack(spacing: 5) {
                 TextField("Enter your prompt here", text: $text)
@@ -31,26 +31,22 @@ struct ContentView: View {
             .padding(10)
             .cornerRadius(10)
             .border(Color.secondary, width: 0.5)
-//            .shadow(color:Color.primary.opacity(0.5), radius: 4, x: 0, y: 2)
         }
         .padding()
-
     }
 }
-
-//#Preview {
-//    ContentView(viewModel: ContentViewModel(appStore: <#T##AppStore#>))
-//}
 
 struct ChatCollectionViewControllerRepresentable: UIViewControllerRepresentable {
     
     private let appStore: AppStore
-    init(appStore: AppStore) {
+    private let conversationDataModel: ConversationDataModel
+    init(appStore: AppStore, conversationDataModel: ConversationDataModel) {
         self.appStore = appStore
+        self.conversationDataModel = conversationDataModel
     }
     
     func makeUIViewController(context: Context) -> ChatCollectionViewController {
-        let viewModel = ChatCollectionViewModel(appStore: appStore, dataProcessor: ChatDataProcessor())
+        let viewModel = ChatCollectionViewModel(appStore: appStore, conversationDataModel: conversationDataModel, dataProcessor: ChatDataProcessor())
         let vc = ChatCollectionViewController(viewModel: viewModel)
         return vc
     }

@@ -17,7 +17,7 @@ struct HomeView: View {
             .navigationTitle("Home")
             .toolbar {
                 ToolbarItem(id: "New", placement: .topBarTrailing) {
-                    NavigationLink(destination: ContentView(viewModel: ContentViewModel(appStore: AppStore.shared))) {
+                    NavigationLink(destination: ChatContainerView(viewModel: ChatContainerViewModel(appStore: AppStore.shared, conversationDataModel: homeViewModel.createNewConversation()))) {
                         Image(systemName: "square.and.pencil")
                     }
                 }

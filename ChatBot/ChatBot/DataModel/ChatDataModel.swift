@@ -56,13 +56,38 @@ nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Se
     }
 }
 
-nonisolated final class ConversationDataModel: Codable {
+nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
+    static func == (lhs: ConversationDataModel, rhs: ConversationDataModel) -> Bool {
+        lhs.id == rhs.id
+    }
     
     let id: String
-    let chats:[ChatDataModel]
-    
+    var chats:[ChatDataModel]
+    var title: String {
+        return String(chats.first?.text.prefix(35) ?? "No title")
+    }
     init(id: String, chats: [ChatDataModel]) {
         self.id = id
         self.chats = chats
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+struct ChatReponsesTransformer {
+        
+    static func chatDataModelFromOpenAIResponses(_ chatResponses: OpenAIResponse) -> [ChatDataModel] {
+        var chats = [ChatDataModel]()
+        let output = chatResponses.output.filter{$0.type == "message"}.first
+        guard let output else {return []}
+        guard let content = output.content?.first else {return []}
+        let outputRole = output.role ?? "assistant"
+        let role = ChatResponseRole(rawValue: outputRole) ?? .assistant
+        let chat = ChatDataModel(id: output.id , text: content.text, date: chatResponses.created_at, type: role)
+        chats.append(chat)
+        
+        return chats
     }
 }

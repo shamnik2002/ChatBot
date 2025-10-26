@@ -27,7 +27,7 @@ final class ConversationMiddleware {
             fetchConversationList()
             break
         case let action as CreateConversation:
-            createConversation(id: action.id, chats: action.chats)
+            createConversation(action.conversation)
             break
         default:
             break
@@ -42,11 +42,10 @@ final class ConversationMiddleware {
         }
     }
     
-    func createConversation(id: String, chats: [ChatDataModel]) {
+    func createConversation(_ conversation: ConversationDataModel) {
         Task {
-            let conversation = ConversationDataModel(id: id, chats: chats)
             await cache.addConversation(conversation)
-            fetchConversationList()
+            fetchConversationList()            
         }
         
     }

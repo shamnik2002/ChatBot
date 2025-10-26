@@ -12,25 +12,31 @@ protocol ReduxAction {}
 protocol ReduxMutatingAction: ReduxAction {}
 
 protocol GetChat: ReduxAction {}
+
 struct GetChatResponse: GetChat {
     let input: String
+    let conversationID: String
 }
 
 struct GetOldChatResponses: GetChat {
-    
+    let conversationID: String
 }
 
 
 protocol SetChat: ReduxMutatingAction {}
+
 struct SetChatResponse: SetChat {
-    let response: OpenAIResponse
+    let conversationID: String
+    let chats: [ChatDataModel]
 }
 
 struct SetOldChatResponses: SetChat {
-    let responses: [OpenAIResponse]
+    let conversationID: String
+    let chats: [ChatDataModel]
 }
 
 struct SetUserChatMessage: SetChat {
+    let conversationID: String
     let chatDataModel: ChatDataModel
 }
 
@@ -46,8 +52,7 @@ struct SetConversationList: ConversationUpdateAction {
 }
 
 struct CreateConversation: ConversationAction {
-    let id: String
-    let chats: [ChatDataModel]
+    let conversation: ConversationDataModel
 }
 
 struct SetConversation: ConversationUpdateAction {

@@ -38,5 +38,12 @@ actor CBCache {
         self.conversations.removeAll { convo in
             convo.id == conversation.id
         }
-    }        
+    }
+    
+    func addChatsToConversation(_ chats: [ChatDataModel], conversationID: String) {
+        var convo = conversations.first { dm in
+            dm.id == conversationID
+        }
+        convo?.chats.append(contentsOf: chats)        
+    }
 }
