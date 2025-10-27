@@ -22,12 +22,13 @@ final class AppStore {
     init() {
         self.dispacther = Dispatcher()
         self.cache = CBCache()
+        self.featureConfig = FeatureConfig()
+
         self.chatState = ChatState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$setChat.eraseToAnyPublisher())
-        self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, listner: self.dispacther.$getChat.eraseToAnyPublisher())
+        self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, featureConfig: self.featureConfig, listner: self.dispacther.$getChat.eraseToAnyPublisher())
         
         self.conversationState = ConversationState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$conversationUpdateAction.eraseToAnyPublisher())
         self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
-        self.featureConfig = FeatureConfig()
     }
 }
 

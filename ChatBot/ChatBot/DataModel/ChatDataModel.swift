@@ -85,7 +85,7 @@ struct ChatReponsesTransformer {
         guard let content = output.content?.first else {return []}
         let outputRole = output.role ?? "assistant"
         let role = ChatResponseRole(rawValue: outputRole) ?? .assistant
-        let chat = ChatDataModel(id: output.id , text: content.text, date: chatResponses.created_at, type: role)
+        let chat = ChatDataModel(id: output.id , text: content.text, date: Date().timeIntervalSince1970, type: role)
         chats.append(chat)
         
         return chats
