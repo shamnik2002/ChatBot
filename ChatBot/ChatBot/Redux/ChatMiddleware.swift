@@ -111,7 +111,7 @@ final class ChatMiddleware {
     
     private func fetchMockResponse(conversationID: String) {
         Task {[weak self] in
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(10))
             guard let chatBotresponse = randomStringGenerator(count: 1).first else {return}
             let chat = ChatDataModel(id: UUID().uuidString, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
             await self?.cache.addChatsToConversation([chat], conversationID: conversationID)

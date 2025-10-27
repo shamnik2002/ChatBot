@@ -56,6 +56,25 @@ nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Se
     }
 }
 
+nonisolated final class ChatSystemMessageDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
+
+    let texts: [String]
+    
+    init(id: String, texts: [String]) {
+        self.texts = texts
+        super.init(id: id)
+    }
+    
+    override func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(texts)
+    }
+    
+    required init(from decoder: any Decoder) throws {
+        fatalError("init(from:) has not been implemented")
+    }
+}
+
 nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
     static func == (lhs: ConversationDataModel, rhs: ConversationDataModel) -> Bool {
         lhs.id == rhs.id

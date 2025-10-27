@@ -30,12 +30,12 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     private var isLoading = false
     private var dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>
     private var conversationDataModel: ConversationDataModel
+    private var systemMessage = ChatSystemMessageDataModel(id: UUID().uuidString, texts: ["Thinking...", "Searching..."])
     
     init(appStore: AppStore, conversationDataModel: ConversationDataModel, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>) {
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
         self.dataProcessor = dataProcessor
-        
         processResponse(ChatResponses(conversationID: conversationDataModel.id, chats: conversationDataModel.chats, responseType: .new))
         self.appStore.chatState.responsesPublisher.receive(on: RunLoop.main)
             .sink {[weak self] chatResponse in
@@ -71,6 +71,10 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
         
         var chatsUpdateType: ChatsUpdateType = .appended
 
+        self.chatCollectionViewDataItems.removeAll { item in
+            item.id == systemMessage.id
+        }
+        
         if !self.chatCollectionViewDataItems.isEmpty {
             // we have some chats
             // check dates to confirm whether to append or insert
@@ -110,9 +114,12 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     }
     
     func processUserChatData(_ chatDataModel: ChatDataModel) {
+        
         let lookupData:[ChatCollectionViewDataItem] = [chatCollectionViewDataItems.last(where: {$0 is DateDataModel})].compactMap{$0}
-        let chatCollectionViewDataItems = dataProcessor.process(data: [chatDataModel], lookupData: lookupData)
+        var chatCollectionViewDataItems = dataProcessor.process(data: [chatDataModel], lookupData: lookupData)
+        chatCollectionViewDataItems.append(systemMessage)
         self.chatCollectionViewDataItems.append(contentsOf: chatCollectionViewDataItems)
+        isLoading = true
         internalChatsPublisher.send((self.chatCollectionViewDataItems, .appended))
     }
 }

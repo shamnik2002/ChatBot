@@ -59,6 +59,11 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
                     yOffset += attributes.frame.height + Constants.interimSpacing
                     attributeList.append(attributes)
 
+                case let chat as ChatSystemMessageDataModel:
+                    let attributes = getAttributesForSystemMessageDataModel(chat, collectionView: collectionView, row: row, yOffset: yOffset)
+                    yOffset += attributes.frame.height + Constants.interimSpacing
+                    attributeList.append(attributes)
+
                 default:
                     break
             }
@@ -111,6 +116,28 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
         return attributes
     }
     
+    func getAttributesForSystemMessageDataModel(_ dateDataModel: ChatSystemMessageDataModel, collectionView: UICollectionView, row: Int, yOffset: CGFloat) -> UICollectionViewLayoutAttributes {
+        
+        let attributedText = NSAttributedString(
+            string: "Trending...",
+            attributes: [
+                .font: UIFont.preferredFont(forTextStyle:.headline),
+                .foregroundColor: UIColor.systemBlue,
+                .kern: 1.2
+            ]
+        )
+        
+        let topBottomPadding = ChatDateView.Constants.topPadding + ChatDateView.Constants.bottomPadding
+        let height = ceil(attributedText.height(constrainedToWidth: collectionView.frame.width) + topBottomPadding)
+
+        let leftPadding = Constants.leftPadding
+        let xOffset: CGFloat = leftPadding
+        let width = collectionView.bounds.width - leftPadding - Constants.rightPadding
+
+        let attributes = UICollectionViewLayoutAttributes(forCellWith: IndexPath(row: row, section: 0))
+        attributes.frame = CGRect(x: xOffset, y: yOffset, width: width, height: height)
+        return attributes
+    }
     
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         var attributes = [UICollectionViewLayoutAttributes]()
