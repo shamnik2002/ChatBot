@@ -1,4 +1,4 @@
-#ChatBot
+# ChatBot
 My take on building a chatgpt type app which uses OpenAI responses API
 
 This is WIP project which demonstrates how we can build a chat bot using openAI apis. UI is inspired my imessage app. 
@@ -12,13 +12,13 @@ If you would rather not, you could still try this app using mock responses.
 ![chatbot_gif2](https://github.com/user-attachments/assets/302d7b39-1b29-4d57-af7b-b3806291e384)
 
 
-#Key iOS Features
+# Key iOS Features
 - Async/Await
 - Combine
 - SwiftUI List views
 - UIKit CollectionView
 
-#Architecture
+# Architecture
 
 - Use reactive redux architecture with slight modification
 - AppStore connects all pieces and is injected in necessary classes
