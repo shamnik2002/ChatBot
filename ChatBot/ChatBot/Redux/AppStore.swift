@@ -16,6 +16,7 @@ final class AppStore {
     let conversationMiddleware: ConversationMiddleware
     let cache: CBCache
     let dispacther: Dispatcher
+    let featureConfig: FeatureConfig
     static let shared = AppStore()
     
     init() {
@@ -25,7 +26,8 @@ final class AppStore {
         self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, listner: self.dispacther.$getChat.eraseToAnyPublisher())
         
         self.conversationState = ConversationState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$conversationUpdateAction.eraseToAnyPublisher())
-        self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, listner: self.dispacther.$conversationAction.eraseToAnyPublisher()) 
+        self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
+        self.featureConfig = FeatureConfig()
     }
 }
 

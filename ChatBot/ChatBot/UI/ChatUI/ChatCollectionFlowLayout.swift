@@ -72,7 +72,7 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
         let attributedText = NSAttributedString(
             string: chatDataModel.text,
             attributes: [
-                .font: UIFont.systemFont(ofSize: 18),
+                .font: UIFont.preferredFont(forTextStyle:.headline),
                 .foregroundColor: UIColor.systemBlue,
                 .kern: 1.2
             ]
@@ -91,7 +91,7 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
     func getAttributesForDateDataModel(_ dateDataModel: DateDataModel, collectionView: UICollectionView, row: Int, yOffset: CGFloat) -> UICollectionViewLayoutAttributes {
         
         let attributedText = NSAttributedString(
-            string: "today",
+            string: Date(timeIntervalSince1970: dateDataModel.date).shortRelativeDate(),
             attributes: [
                 .font: UIFont.preferredFont(forTextStyle:.headline),
                 .foregroundColor: UIColor.systemBlue,

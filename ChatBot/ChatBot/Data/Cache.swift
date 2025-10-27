@@ -41,7 +41,7 @@ actor CBCache {
     }
     
     func addChatsToConversation(_ chats: [ChatDataModel], conversationID: String) {
-        var convo = conversations.first { dm in
+        let convo = conversations.first { dm in
             dm.id == conversationID
         }
         convo?.chats.append(contentsOf: chats)        

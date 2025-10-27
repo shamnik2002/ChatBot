@@ -16,13 +16,20 @@ final class ChatMiddleware {
     private var cancellables = Set<AnyCancellable>()
     private let dispatch: Dispatch
     private let cache: CBCache
+    private let featureConfig: FeatureConfig
     
-    init(dispatch: @escaping Dispatch, networkService: NetworkProtocol, parser: ParseProtocol, cache: CBCache, listner: AnyPublisher<GetChat?, Never>) {
+    init(dispatch: @escaping Dispatch,
+         networkService: NetworkProtocol,
+         parser: ParseProtocol,
+         cache: CBCache,
+         featureConfig: FeatureConfig,
+         listner: AnyPublisher<GetChat?, Never>) {
+        
         self.dispatch = dispatch
         self.networkService = networkService
         self.parser = parser
         self.cache = cache
-        
+        self.featureConfig = featureConfig
         listner.sink {[weak self] action in
             guard let action = action else { return }
             self?.handle(action: action)
@@ -33,11 +40,16 @@ final class ChatMiddleware {
         switch action {
             case let action as GetChatResponse:
             addUserMessage(input: action.input, conversationID: action.conversationID)
-            fetchMockResponse(conversationID: action.conversationID)
-//            fetchResponses(input: action.input, conversationID: action.conversationID)
+            if featureConfig.enableOpenAIResponsesAPI {
+                fetchResponses(input: action.input, conversationID: action.conversationID)
+            }else {
+                fetchMockResponse(conversationID: action.conversationID)
+            }
                 break
         case let action as GetOldChatResponses:
-            fetchMockResponses(conversationID: action.conversationID)
+            if !featureConfig.enableOpenAIResponsesAPI {
+                fetchMockResponses(conversationID: action.conversationID)
+            }
             default:
                 break
         }

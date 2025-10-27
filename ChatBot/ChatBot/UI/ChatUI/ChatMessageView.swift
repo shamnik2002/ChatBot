@@ -20,18 +20,19 @@ struct ChatMessageView: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 10){
-            VStack(alignment: .leading) {
-                Text(viewModel.chatDataModel.text)
-                    .font(.headline)
-                    .foregroundColor(viewModel.textColor)
-                    .background(viewModel.backgroundColor)
-                    .multilineTextAlignment(viewModel.textAlignment)
+            if viewModel.chatDataModel.type == .user {
+                Spacer()
             }
-            Spacer()
+            Text(viewModel.chatDataModel.text)
+                .font(.headline)
+                .foregroundColor(viewModel.textColor)
+                .padding(10)
+                .background(viewModel.backgroundColor)
+                .cornerRadius(10)
+
+
         }
         .frame(maxWidth: .infinity)   // makes HStack expand horizontally
-        .padding(10)
-        .cornerRadius(10)
     }
 }
 
@@ -61,6 +62,16 @@ final class ChatMessageViewModel: ObservableObject {
     }
     
     var textAlignment: TextAlignment {
+        switch chatDataModel.type {
+            case .assistant:
+            return .leading
+            case .user:
+            return .trailing
+            case .system:
+            return .center
+        }
+    }
+    var alignment: HorizontalAlignment {
         switch chatDataModel.type {
             case .assistant:
             return .leading
