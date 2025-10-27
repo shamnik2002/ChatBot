@@ -39,6 +39,7 @@ If you would rather not, you could still try this app using mock responses.
 
 #TODOs
 - Error handling like when offline tell user no internet connection, failure of responses API show message to user that something went wrong and allow for retry
+- Delete conversations, perhapd rename them as well
 - Currently everything is cached in memory, plan is to use SwiftData for persistent storage
 - Eventually use CloudKit to store data on cloud and only fetch what is recent/needed
 - After cloudkit, add pagination ability to only fetch recent chat messages for a conversation instead of everything
