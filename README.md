@@ -7,6 +7,9 @@ This is WIP project which demonstrates how we can build a chat bot using openAI 
 You need to add your own API_Key in `OpenAIContants` struct if you want to use a live version. You can create one following OpenAI instructions.
 If you would rather not, you could still try this app using mock responses.
 
+![chatbot_gif1](https://github.com/user-attachments/assets/de361340-c9f0-415d-9b5a-1540c2f1af3d)
+
+![chatbot_gif2](https://github.com/user-attachments/assets/302d7b39-1b29-4d57-af7b-b3806291e384)
 
 
 #Key iOS Features
@@ -38,6 +41,7 @@ If you would rather not, you could still try this app using mock responses.
 ### Conversation sequence diagram
 
 #TODOs
+- thinking / searching indicator
 - Error handling like when offline tell user no internet connection, failure of responses API show message to user that something went wrong and allow for retry
 - Delete conversations, perhapd rename them as well
 - Currently everything is cached in memory, plan is to use SwiftData for persistent storage
