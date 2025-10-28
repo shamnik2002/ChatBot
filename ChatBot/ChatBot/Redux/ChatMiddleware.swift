@@ -40,7 +40,7 @@ final class ChatMiddleware {
         switch action {
             case let action as GetChatResponse:
             addUserMessage(input: action.input, conversationID: action.conversationID)
-            if featureConfig.enableOpenAIResponsesAPI {
+            if featureConfig.enableOpenAIResponsesAPI && !OpenAIContants.API_Secret.isEmpty {
                 fetchResponses(input: action.input, conversationID: action.conversationID)
             }else {
                 fetchMockResponse(conversationID: action.conversationID)
