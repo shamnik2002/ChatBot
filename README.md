@@ -7,9 +7,8 @@ This is WIP project which demonstrates how we can build a chat bot using openAI 
 You need to add your own API_Key in `OpenAIContants` struct if you want to use a live version. You can create one following OpenAI instructions.
 If you would rather not, you could still try this app using mock responses.
 
-![chatbot_gif1](https://github.com/user-attachments/assets/de361340-c9f0-415d-9b5a-1540c2f1af3d)
 
-![chatbot_gif2](https://github.com/user-attachments/assets/302d7b39-1b29-4d57-af7b-b3806291e384)
+![chabot_gif](https://github.com/user-attachments/assets/1aa555cf-89ea-46c3-97a1-ef0db0a5dc88)
 
 
 # Key iOS Features
