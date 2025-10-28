@@ -14,8 +14,8 @@ If you would rather not, you could still try this app using mock responses.
 # Key iOS Features
 - Async/Await
 - Combine
-- SwiftUI List views
-- UIKit CollectionView
+- SwiftUI List views + cell views
+- UIKit CollectionView with diffable datasource
 
 # Architecture
 
