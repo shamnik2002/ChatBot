@@ -6,22 +6,23 @@
 //
 import SwiftUI
 import Combine
+import SwiftData
 
 final class MainTabViewModel: ObservableObject {
-    private(set) var appStore: AppStore
     
-    init(appStore: AppStore) {
-        self.appStore = appStore
+    init() {
+        
     }
 }
 
 struct MainTabView: View {
     
+    @Environment(\.modelContext) var modelContext
     @StateObject var viewModel: MainTabViewModel
     
     var body: some View {
         TabView {
-            HomeView(homeViewModel: HomeViewModel(appStore: viewModel.appStore))
+            HomeView(homeViewModel: HomeViewModel(modelContext: modelContext))
                 .tabItem {
                     Label("Home", systemImage: "house")
                 }

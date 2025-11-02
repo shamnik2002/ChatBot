@@ -6,15 +6,19 @@
 //
 import Foundation
 import Combine
+import SwiftData
 
 final class ConversationMiddleware {
     
     private var cancellables = Set<AnyCancellable>()
     private let dispatch: Dispatch
     private var cache: CBCache
-    init(dispatch: @escaping Dispatch, cache: CBCache, listner: AnyPublisher<ConversationAction?, Never>) {
+    private var modelContext: ModelContext
+    
+    init(dispatch: @escaping Dispatch, cache: CBCache, modelContext: ModelContext, listner: AnyPublisher<ConversationAction?, Never>) {
         self.dispatch = dispatch
         self.cache = cache
+        self.modelContext = modelContext
         listner.sink {[weak self] action in
             guard let action = action else { return }
             self?.handle(action: action)
@@ -23,7 +27,7 @@ final class ConversationMiddleware {
     
     func handle(action: ReduxAction) {
         switch action {
-        case let action as GetConversationList:
+        case _ as GetConversationList:
             fetchConversationList()
             break
         case let action as CreateConversation:
@@ -36,7 +40,20 @@ final class ConversationMiddleware {
     
     func fetchConversationList() {
         Task {
-            let conversationList = await cache.getConversations()
+            var conversationList = await cache.getConversations()
+            if conversationList.isEmpty {
+                // check if we have it in store
+                let descriptor = FetchDescriptor<ConversationModel>(
+                    sortBy: [SortDescriptor(\.date, order: .reverse)]
+                )
+                if let data = try? modelContext.fetch(descriptor) {
+                    conversationList = data.map{ConversationDataModel(id: $0.id, title: $0.title, date: $0.date)}
+                    if !conversationList.isEmpty {
+                        await cache.setConversations(conversationList)
+                    }
+                }
+            }
+            
             let conversationUpdateAction = SetConversationList(conversationlist: conversationList)
             dispatch(conversationUpdateAction)
         }
@@ -45,9 +62,17 @@ final class ConversationMiddleware {
     func createConversation(_ conversation: ConversationDataModel) {
         Task {
             await cache.addConversation(conversation)
-            fetchConversationList()            
-        }
-        
+            fetchConversationList()
+            Task {@MainActor in
+                let convoModel = ConversationModel(id: conversation.id, title: conversation.title, date: Date().timeIntervalSince1970)
+                modelContext.insert(convoModel)
+                do {
+                    try modelContext.save()
+                }catch {
+                    print(error)
+                }
+            }
+        }        
     }
 }
 

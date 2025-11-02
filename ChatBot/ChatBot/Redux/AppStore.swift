@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import SwiftData
 
 final class AppStore {
     
@@ -17,18 +18,18 @@ final class AppStore {
     let cache: CBCache
     let dispacther: Dispatcher
     let featureConfig: FeatureConfig
-    static let shared = AppStore()
+    let modelContext: ModelContext
     
-    init() {
+    init(modelContext: ModelContext) {
         self.dispacther = Dispatcher()
         self.cache = CBCache()
         self.featureConfig = FeatureConfig()
-
+        self.modelContext = modelContext
         self.chatState = ChatState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$setChat.eraseToAnyPublisher())
-        self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, featureConfig: self.featureConfig, listner: self.dispacther.$getChat.eraseToAnyPublisher())
+        self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, featureConfig: self.featureConfig, modelContext: self.modelContext, listner: self.dispacther.$getChat.eraseToAnyPublisher())
         
         self.conversationState = ConversationState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$conversationUpdateAction.eraseToAnyPublisher())
-        self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
+        self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, modelContext: self.modelContext, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
     }
 }
 

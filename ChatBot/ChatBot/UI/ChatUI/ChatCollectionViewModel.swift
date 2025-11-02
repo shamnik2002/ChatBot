@@ -36,7 +36,6 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
         self.dataProcessor = dataProcessor
-        processResponse(ChatResponses(conversationID: conversationDataModel.id, chats: conversationDataModel.chats, responseType: .new))
         self.appStore.chatState.responsesPublisher.receive(on: RunLoop.main)
             .sink {[weak self] chatResponse in
                 guard conversationDataModel.id == chatResponse.conversationID else {return}
@@ -54,13 +53,14 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     }
     
     func fetchChats() {
-        internalChatsPublisher.send((self.chatCollectionViewDataItems, .appended))
+        let getChats = GetChats(conversationID: conversationDataModel.id)
+        appStore.dispacther.dispatch(getChats)
     }
     
     func fetchOldChats() {
         guard !isLoading else {return}
         isLoading = true
-        let getOldChats = GetOldChatResponses(conversationID: conversationDataModel.id)
+        let getOldChats = GetChats(conversationID: conversationDataModel.id)
         self.appStore.dispacther.dispatch(getOldChats)
     }
     

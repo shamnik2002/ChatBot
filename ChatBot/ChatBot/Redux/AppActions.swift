@@ -18,7 +18,7 @@ struct GetChatResponse: GetChat {
     let conversationID: String
 }
 
-struct GetOldChatResponses: GetChat {
+struct GetChats: GetChat {
     let conversationID: String
 }
 
@@ -30,7 +30,7 @@ struct SetChatResponse: SetChat {
     let chats: [ChatDataModel]
 }
 
-struct SetOldChatResponses: SetChat {
+struct SetChats: SetChat {
     let conversationID: String
     let chats: [ChatDataModel]
 }

@@ -42,7 +42,7 @@ final class ChatState {
             case let action as SetChatResponse:
                 let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, responseType: .new)
                 responsesPublisher.send(chatresponses)
-            case let action as SetOldChatResponses:
+            case let action as SetChats:
                 let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, responseType: .old)
                 responsesPublisher.send(chatresponses)
             case let action as SetUserChatMessage:

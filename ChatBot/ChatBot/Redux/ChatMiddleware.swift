@@ -7,8 +7,8 @@
 
 import Foundation
 import Combine
+import SwiftData
 
-var mockDate = Date()
 final class ChatMiddleware {
     
     private let networkService: NetworkProtocol
@@ -17,12 +17,14 @@ final class ChatMiddleware {
     private let dispatch: Dispatch
     private let cache: CBCache
     private let featureConfig: FeatureConfig
+    private let modelContext: ModelContext
     
     init(dispatch: @escaping Dispatch,
          networkService: NetworkProtocol,
          parser: ParseProtocol,
          cache: CBCache,
          featureConfig: FeatureConfig,
+         modelContext: ModelContext,
          listner: AnyPublisher<GetChat?, Never>) {
         
         self.dispatch = dispatch
@@ -30,6 +32,7 @@ final class ChatMiddleware {
         self.parser = parser
         self.cache = cache
         self.featureConfig = featureConfig
+        self.modelContext = modelContext
         listner.sink {[weak self] action in
             guard let action = action else { return }
             self?.handle(action: action)
@@ -46,10 +49,8 @@ final class ChatMiddleware {
                 fetchMockResponse(conversationID: action.conversationID)
             }
                 break
-        case let action as GetOldChatResponses:
-            if !featureConfig.enableOpenAIResponsesAPI {
-                fetchMockResponses(conversationID: action.conversationID)
-            }
+        case let action as GetChats:
+            fetchChats(conversationID: action.conversationID)
             default:
                 break
         }
@@ -70,24 +71,63 @@ final class ChatMiddleware {
     
     private func processChatResponses(_ responses: OpenAIResponse, conversationID: String) {
         Task {
-            let chats = ChatReponsesTransformer.chatDataModelFromOpenAIResponses(responses)
+            let chats = ChatReponsesTransformer.chatDataModelFromOpenAIResponses(responses, conversationID: conversationID)
             await cache.addChatsToConversation(chats, conversationID: conversationID)
             let setChatResponse = SetChatResponse(conversationID: conversationID, chats: chats)
             dispatch(setChatResponse)
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
+            Task {@MainActor in
+                chats.forEach { data in
+                    let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type)
+                    modelContext.insert(model)
+                }
+                try? modelContext.save()
+            }
         }
     }
     
     private func addUserMessage(input: String, conversationID: String) {
         Task {
-            let date = ceil(Date().timeIntervalSince1970)
-            let userChat = ChatDataModel(id: UUID().uuidString, text: input, date: date, type: ChatResponseRole.user)
+            
+            let date = Date()
+            let timeInterval = ceil(date.timeIntervalSince1970)
+            let uuid = UUID().uuidString
+            let userChat = ChatDataModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, type: ChatResponseRole.user)
             await cache.addChatsToConversation([userChat], conversationID: conversationID)
+            var convo = await cache.getConversation(for: conversationID)
+            if let convo = convo, convo.title.isEmpty {
+                convo.title = String(input.prefix(35))
+                await cache.setConversation(convo, for: conversationID)
+                modelContext.insert(ConversationModel(id: convo.id, title: convo.title, date: convo.date))
+            }
             let setUserChatMessageAction = SetUserChatMessage(conversationID: conversationID, chatDataModel: userChat)
             dispatch(setUserChatMessageAction)
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
+            let chatMsgModel = ChatMessageModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, role: ChatResponseRole.user)
+            modelContext.insert(chatMsgModel)
+            try? modelContext.save()
+        }
+    }
+    
+    private func fetchChats(conversationID: String) {
+        let dispatch = self.dispatch
+        Task {
+            var chatDataModels = await cache.getChats(conversationID: conversationID)
+            if chatDataModels.isEmpty {
+                let descriptor = FetchDescriptor<ChatMessageModel>(
+                    predicate: #Predicate{$0.conversationID == conversationID},
+                    sortBy: [SortDescriptor(\.date, order: .forward)]
+                )
+                if let chats = try? modelContext.fetch(descriptor), !chats.isEmpty {
+                    chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: $0.role)}
+                    await cache.addChatsToConversation(chatDataModels, conversationID: conversationID)
+                }
+            }
+                        
+            let setChatAction = SetChats(conversationID: conversationID, chats: chatDataModels)
+            dispatch(setChatAction)
         }
     }
     
@@ -99,10 +139,10 @@ final class ChatMiddleware {
             var delta:TimeInterval = 60*2
             for text in oldChatsText {
                 let date = mockDate.timeIntervalSince1970 - delta
-                chats.append(ChatDataModel(id: UUID().uuidString, text: text, date: date, type: .assistant))
+                chats.append(ChatDataModel(id: UUID().uuidString, conversationID: conversationID, text: text, date: date, type: .assistant))
                 delta -= 60*2
             }
-            let setResponsesAction = SetOldChatResponses(conversationID: conversationID, chats: chats)
+            let setResponsesAction = SetChats(conversationID: conversationID, chats: chats)
             self?.dispatch(setResponsesAction)
             mockDate = mockDate.dayBefore
         }
@@ -113,13 +153,20 @@ final class ChatMiddleware {
         Task {[weak self] in
             try? await Task.sleep(for: .seconds(10))
             guard let chatBotresponse = randomStringGenerator(count: 1).first else {return}
-            let chat = ChatDataModel(id: UUID().uuidString, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
+            let chat = ChatDataModel(id: UUID().uuidString, conversationID: conversationID, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
             await self?.cache.addChatsToConversation([chat], conversationID: conversationID)
             let setResponsesAction = SetChatResponse(conversationID: conversationID, chats: [chat])
             self?.dispatch(setResponsesAction)
+            Task {@MainActor in
+                let model = ChatMessageModel(id: chat.id, conversationID: conversationID,  text: chat.text, date: chat.date, role: chat.type)
+                self?.modelContext.insert(model)
+                try? self?.modelContext.save()
+            }
         }
     }
 }
+
+var mockDate = Date()
 
 extension Date {
     static var yesterday: Date { return Date().dayBefore }

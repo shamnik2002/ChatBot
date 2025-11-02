@@ -6,13 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct ChatBotApp: App {
+    
     var body: some Scene {
         WindowGroup {
-            //ContentView(viewModel: ContentViewModel(appStore: AppStore()))
-            MainTabView(viewModel: MainTabViewModel(appStore: AppStore.shared))
-        }
+            MainTabView(viewModel: MainTabViewModel())
+        }.modelContainer(for: [ConversationModel.self, ChatMessageModel.self])
     }
 }

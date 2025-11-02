@@ -30,11 +30,13 @@ nonisolated final class ChatDataModel: ChatCollectionViewDataItem, @unchecked Se
     let text: String
     let date: TimeInterval
     let type: ChatResponseRole
+    let conversationID: String
     
-    init(id: String, text: String, date: TimeInterval, type: ChatResponseRole) {
+    init(id: String, conversationID: String, text: String, date: TimeInterval, type: ChatResponseRole) {
         self.text = text
         self.date = date
         self.type = type
+        self.conversationID = conversationID
         super.init(id: id)
     }
     
@@ -81,13 +83,13 @@ nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
     }
     
     let id: String
-    var chats:[ChatDataModel]
-    var title: String {
-        return String(chats.first?.text.prefix(35) ?? "No title")
-    }
-    init(id: String, chats: [ChatDataModel]) {
+    var title: String
+    var date: TimeInterval
+    
+    init(id: String, title: String, date: TimeInterval) {
         self.id = id
-        self.chats = chats
+        self.title = title
+        self.date = date
     }
     
     func hash(into hasher: inout Hasher) {
@@ -97,14 +99,14 @@ nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
 
 struct ChatReponsesTransformer {
         
-    static func chatDataModelFromOpenAIResponses(_ chatResponses: OpenAIResponse) -> [ChatDataModel] {
+    static func chatDataModelFromOpenAIResponses(_ chatResponses: OpenAIResponse, conversationID: String) -> [ChatDataModel] {
         var chats = [ChatDataModel]()
         let output = chatResponses.output.filter{$0.type == "message"}.first
         guard let output else {return []}
         guard let content = output.content?.first else {return []}
         let outputRole = output.role ?? "assistant"
         let role = ChatResponseRole(rawValue: outputRole) ?? .assistant
-        let chat = ChatDataModel(id: output.id , text: content.text, date: Date().timeIntervalSince1970, type: role)
+        let chat = ChatDataModel(id: output.id, conversationID: conversationID , text: content.text, date: Date().timeIntervalSince1970, type: role)
         chats.append(chat)
         
         return chats

@@ -17,7 +17,7 @@ final class ConversationListViewModel: ObservableObject {
     @Published var items: [ConversationDataModel] = []
     
     private var cancellables = Set<AnyCancellable>()
-    private var appStore: AppStore
+    private(set) var appStore: AppStore
     init(appStore: AppStore) {
         self.appStore = appStore
 //        items = mockConversationList()
@@ -30,7 +30,8 @@ final class ConversationListViewModel: ObservableObject {
     }
     
     func fetchConversations() {
-        
+        let getConvo = GetConversationList()
+        appStore.dispacther.dispatch(getConvo)
     }
 
 }
@@ -46,7 +47,9 @@ struct ConversationListView: View {
                 Text(item.title)
             }
         }.navigationDestination(for: ConversationDataModel.self) { item in
-            ChatContainerView(viewModel: ChatContainerViewModel(appStore: AppStore.shared, conversationDataModel: item))
+            ChatContainerView(viewModel: ChatContainerViewModel(appStore: viewModel.appStore, conversationDataModel: item))
+        }.onAppear {
+            viewModel.fetchConversations()
         }
     }
 }

@@ -10,6 +10,7 @@ import Combine
 
 actor CBCache {
     private var conversations: [ConversationDataModel] = []
+    private var chats: [String:[ChatDataModel]] = [:]
     
     func getConversations() -> [ConversationDataModel] {
         return conversations
@@ -41,9 +42,13 @@ actor CBCache {
     }
     
     func addChatsToConversation(_ chats: [ChatDataModel], conversationID: String) {
-        let convo = conversations.first { dm in
-            dm.id == conversationID
-        }
-        convo?.chats.append(contentsOf: chats)        
+        
+        self.chats[conversationID, default: []] += chats
     }
+    
+    func getChats(conversationID: String) -> [ChatDataModel] {
+        guard let chatDataModels = self.chats[conversationID] else {return []}
+        return chatDataModels.sorted { $0.date < $1.date }
+    }
+    
 }
