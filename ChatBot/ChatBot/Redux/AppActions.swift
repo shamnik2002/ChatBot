@@ -58,3 +58,11 @@ struct CreateConversation: ConversationAction {
 struct SetConversation: ConversationUpdateAction {
     let conversation: ConversationDataModel
 }
+
+struct DeleteConversations: ConversationAction {
+    let conversations: [ConversationDataModel]
+}
+
+struct EditConversation: ConversationAction {
+    let conversation: ConversationDataModel
+}

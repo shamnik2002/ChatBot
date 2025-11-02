@@ -94,6 +94,8 @@ nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(title)
+        hasher.combine(date)
     }
 }
 

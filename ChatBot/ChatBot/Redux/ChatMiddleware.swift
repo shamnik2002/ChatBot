@@ -82,7 +82,11 @@ final class ChatMiddleware {
                     let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type)
                     modelContext.insert(model)
                 }
-                try? modelContext.save()
+                do {
+                    try modelContext.save()
+                }catch {
+                    print(error.localizedDescription)
+                }
             }
         }
     }
@@ -95,19 +99,23 @@ final class ChatMiddleware {
             let uuid = UUID().uuidString
             let userChat = ChatDataModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, type: ChatResponseRole.user)
             await cache.addChatsToConversation([userChat], conversationID: conversationID)
-            var convo = await cache.getConversation(for: conversationID)
+            let convo = await cache.getConversation(for: conversationID)
             if let convo = convo, convo.title.isEmpty {
                 convo.title = String(input.prefix(35))
                 await cache.setConversation(convo, for: conversationID)
                 modelContext.insert(ConversationModel(id: convo.id, title: convo.title, date: convo.date))
-            }
-            let setUserChatMessageAction = SetUserChatMessage(conversationID: conversationID, chatDataModel: userChat)
-            dispatch(setUserChatMessageAction)
-            let getConversationList = GetConversationList()
-            dispatch(getConversationList)
+            }            
             let chatMsgModel = ChatMessageModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, role: ChatResponseRole.user)
             modelContext.insert(chatMsgModel)
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+            }catch {
+                print(error.localizedDescription)
+            }
+            let getConversationList = GetConversationList()
+            dispatch(getConversationList)
+            let setUserChatMessageAction = SetUserChatMessage(conversationID: conversationID, chatDataModel: userChat)
+            dispatch(setUserChatMessageAction)
         }
     }
     
@@ -160,7 +168,11 @@ final class ChatMiddleware {
             Task {@MainActor in
                 let model = ChatMessageModel(id: chat.id, conversationID: conversationID,  text: chat.text, date: chat.date, role: chat.type)
                 self?.modelContext.insert(model)
-                try? self?.modelContext.save()
+                do {
+                    try self?.modelContext.save()
+                }catch {
+                    print(error.localizedDescription)
+                }
             }
         }
     }

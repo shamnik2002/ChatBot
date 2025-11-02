@@ -36,8 +36,15 @@ actor CBCache {
     }
     
     func removeConversation(_ conversation: ConversationDataModel) {
+        chats[conversation.id] = nil
         self.conversations.removeAll { convo in
             convo.id == conversation.id
+        }
+    }
+    
+    func removeConversations(_ conversations: [ConversationDataModel]) {
+        conversations.forEach{
+            removeConversation($0)
         }
     }
     
