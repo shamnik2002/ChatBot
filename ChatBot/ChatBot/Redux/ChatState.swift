@@ -11,13 +11,7 @@ import Combine
 struct ChatResponses {
     var conversationID: String
     var chats: [ChatDataModel]
-    // TODO: shamal remove this type, now we use date to decide whether to insert or append
-    var responseType: ChatResponseType
-}
-
-enum ChatResponseType {
-    case new
-    case old
+    var error: ChatError?
 }
 
 final class ChatState {
@@ -26,7 +20,7 @@ final class ChatState {
     
     private(set) var responsesPublisher = PassthroughSubject<ChatResponses, Never>()
     private(set) var userChatMessagePublisher = PassthroughSubject<(String, ChatDataModel), Never>()
-    
+    private(set) var errorPublisher = PassthroughSubject<ReduxAction?, Error>()
     private var cancellables = Set<AnyCancellable>()
     
     init(dispatch: @escaping Dispatch, listner: AnyPublisher<SetChat?, Never>) {
@@ -40,10 +34,10 @@ final class ChatState {
     func handle(action: ReduxMutatingAction?) {
         switch action {
             case let action as SetChatResponse:
-                let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, responseType: .new)
-                responsesPublisher.send(chatresponses)
+                let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, error: action.error)
+                responsesPublisher.send(chatresponses)                
             case let action as SetChats:
-                let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, responseType: .old)
+                let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, error: action.error)
                 responsesPublisher.send(chatresponses)
             case let action as SetUserChatMessage:
                 userChatMessagePublisher.send((action.conversationID, action.chatDataModel))

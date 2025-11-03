@@ -17,7 +17,7 @@ final class ChatContainerViewModel: ObservableObject {
     }
     
     func fetchResponse(input: String) {
-        let getResponses = GetChatResponse(input: input, conversationID: conversationDataModel.id)
+        let getResponses = GetChatResponse(input: input, conversationID: conversationDataModel.id, retryAttempt: 0)
         self.appStore.dispacther.dispatch(getResponses)
     }
     

@@ -27,7 +27,7 @@ final class ChatMessageViewCollectionViewCell: UICollectionViewCell {
           super.prepareForReuse()
       }
     
-    func setup(chat: ChatDataModel) {
+    func setup(chat: ChatDataModel, action:(()->Void)? = nil) {
         
         let viewModel = ChatMessageViewModel(chatDataModel: chat)
         guard hostingController == nil else {
@@ -70,7 +70,7 @@ final class ChatDateViewCollectionViewCell: UICollectionViewCell {
           super.prepareForReuse()
       }
     
-    func setup(chat: DateDataModel) {
+    func setup(chat: DateDataModel, action:(()->Void)? = nil) {
         
         let viewModel = ChatDateViewModel(dateDataModel: chat)
         guard hostingController == nil else {
@@ -112,9 +112,9 @@ final class ChatSystemMessageViewCollectionViewCell: UICollectionViewCell {
           super.prepareForReuse()
       }
     
-    func setup(chat: ChatSystemMessageDataModel) {
+    func setup(chat: ChatSystemMessageDataModel, action:(()->Void)? = nil) {
         
-        let viewModel = ChatSystemMessageViewModel(texts: chat.texts)
+        let viewModel = ChatSystemMessageViewModel(texts: chat.texts, action: action)
         guard hostingController == nil else {
             hostingController?.rootView.viewModel = viewModel
             return

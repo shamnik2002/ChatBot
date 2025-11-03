@@ -58,12 +58,22 @@ nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Se
     }
 }
 
+enum ChatSystemMessageType {
+    case loading
+    case error
+    case retryableError
+}
+
 nonisolated final class ChatSystemMessageDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
 
     let texts: [String]
+    let type: ChatSystemMessageType
+    var retryableAction: GetChat?
     
-    init(id: String, texts: [String]) {
+    init(id: String, texts: [String], type: ChatSystemMessageType, retryableAction: GetChat? = nil) {
         self.texts = texts
+        self.type = type
+        self.retryableAction = retryableAction
         super.init(id: id)
     }
     

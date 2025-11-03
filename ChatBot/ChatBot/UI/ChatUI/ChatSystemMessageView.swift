@@ -23,6 +23,14 @@ struct ChatSystemMessageView: View {
                 .foregroundColor(Color(.lightGray))
                 .contentTransition(.opacity)
                 .animation(.easeInOut, value: viewModel.text)
+                if let _ = viewModel.action {
+                    Button(action: {
+                        viewModel.performAction()
+                    }) {
+                      Image(systemName: "arrow.clockwise")
+                            .padding(5)
+                    }
+                }
             Spacer()
         }
         .frame(maxWidth: .infinity)   // makes HStack expand horizontally
@@ -36,9 +44,10 @@ final class ChatSystemMessageViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var index = 0
     @Published var text: String = ""
-    
-    init(texts: [String]) {
+    var action:(()->Void)?
+    init(texts: [String], action: (()-> Void)?) {
         self.texts = texts
+        self.action = action
         self.text = self.texts.first ?? ""
         if self.texts.count > 1 {
             index += 1
@@ -52,8 +61,11 @@ final class ChatSystemMessageViewModel: ObservableObject {
                     self.text = self.texts[self.index]
                     self.index += 1
                 }.store(in: &cancellables)
-                
         }
+    }
+    
+    func performAction() {
+        action?()
     }
 }
 

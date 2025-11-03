@@ -46,7 +46,7 @@ final class ChatCollectionViewController: UIViewController {
         collectionView.register(ChatMessageViewCollectionViewCell.self, forCellWithReuseIdentifier: "chat")
         collectionView.register(ChatDateViewCollectionViewCell.self, forCellWithReuseIdentifier: "date")
         collectionView.register(ChatSystemMessageViewCollectionViewCell.self, forCellWithReuseIdentifier: "systemMessage")
-        dataSource = UICollectionViewDiffableDataSource<Int, ChatCollectionViewDataItem>(collectionView: collectionView, cellProvider: { collectionView, indexPath, item in
+        dataSource = UICollectionViewDiffableDataSource<Int, ChatCollectionViewDataItem>(collectionView: collectionView, cellProvider: {[weak self] collectionView, indexPath, item in
             
             switch item {
                 case let item as ChatDataModel:
@@ -65,7 +65,13 @@ final class ChatCollectionViewController: UIViewController {
                     guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "systemMessage", for: indexPath) as? ChatSystemMessageViewCollectionViewCell else {
                         return UICollectionViewCell()
                     }
-                    cell.setup(chat: item)
+                    var buttonAction: (()->Void)?
+                    if let action = item.retryableAction {
+                        buttonAction = {
+                            self?.viewModel.retryAction(action)
+                        }
+                    }
+                    cell.setup(chat: item, action: buttonAction)
                     return cell
                 
                 default:

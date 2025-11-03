@@ -9,6 +9,17 @@ import Foundation
 import Combine
 import SwiftData
 
+enum ChatErrorType: String {
+    case retryable
+    case accessDenied
+    case unknownError
+}
+
+struct ChatError {
+    let error: ChatErrorType
+    let originalAction: GetChat
+}
+
 final class ChatMiddleware {
     
     private let networkService: NetworkProtocol
@@ -18,6 +29,7 @@ final class ChatMiddleware {
     private let cache: CBCache
     private let featureConfig: FeatureConfig
     private let modelContext: ModelContext
+    private let maxRetryAttempts = 3
     
     init(dispatch: @escaping Dispatch,
          networkService: NetworkProtocol,
@@ -41,12 +53,14 @@ final class ChatMiddleware {
     
     private func handle(action: ReduxAction) {
         switch action {
-            case let action as GetChatResponse:
-            addUserMessage(input: action.input, conversationID: action.conversationID)
+            case let action as GetChatResponse:            
+            if action.retryAttempt <= 0 {
+                addUserMessage(input: action.input, conversationID: action.conversationID)
+            }
             if featureConfig.enableOpenAIResponsesAPI && !OpenAIContants.API_Secret.isEmpty {
-                fetchResponses(input: action.input, conversationID: action.conversationID)
+                fetchResponses(action: action)
             }else {
-                fetchMockResponse(conversationID: action.conversationID)
+                fetchMockResponse(action: action)
             }
                 break
         case let action as GetChats:
@@ -56,24 +70,55 @@ final class ChatMiddleware {
         }
     }
     
-    private func fetchResponses(input: String, conversationID: String) {
-        let request = ResponsesRequest(input: input)
+    private func fetchResponses(action: GetChatResponse) {
+        let request = ResponsesRequest(input: action.input)
         let parser = parser
         networkService.fetchDataWithPublisher(request: request)
             .flatMap { data in
                 return parser.parse(data: data, type: OpenAIResponse.self)
-            }.sink { completion in
-                
+            }.sink {[weak self] completion in
+                switch completion {
+                    case .failure(let error):
+                        self?.processChatError(error, originalAction: action)
+                    default:
+                        break
+                    }
             } receiveValue: {[weak self] result in
-                self?.processChatResponses(result, conversationID: conversationID)
+                self?.processChatResponses(result, conversationID: action.conversationID)
             }.store(in: &cancellables)
+    }
+    
+    private func processChatError(_ error: Error, originalAction: GetChatResponse) {
+        var errorType: ChatErrorType = .unknownError
+        if originalAction.retryAttempt < maxRetryAttempts {
+            switch error {
+                case let error as NetworkError:
+                    switch error {
+                        case .serverError:
+                            // retryable
+                            errorType = .retryable
+                        case .authError, .forbiddenError:
+                            // accessDenied
+                            errorType = .accessDenied
+                        default:
+                            break
+                    }
+                    break
+                default:
+                    break
+            }
+        }
+                
+        let error = ChatError(error: errorType, originalAction: originalAction)
+        let setChatResponse = SetChatResponse(conversationID: originalAction.conversationID, chats: [], error: error)
+        dispatch(setChatResponse)
     }
     
     private func processChatResponses(_ responses: OpenAIResponse, conversationID: String) {
         Task {
             let chats = ChatReponsesTransformer.chatDataModelFromOpenAIResponses(responses, conversationID: conversationID)
             await cache.addChatsToConversation(chats, conversationID: conversationID)
-            let setChatResponse = SetChatResponse(conversationID: conversationID, chats: chats)
+            let setChatResponse = SetChatResponse(conversationID: conversationID, chats: chats, error: nil)
             dispatch(setChatResponse)
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
@@ -134,7 +179,7 @@ final class ChatMiddleware {
                 }
             }
                         
-            let setChatAction = SetChats(conversationID: conversationID, chats: chatDataModels)
+            let setChatAction = SetChats(conversationID: conversationID, chats: chatDataModels, error: nil)
             dispatch(setChatAction)
         }
     }
@@ -150,23 +195,24 @@ final class ChatMiddleware {
                 chats.append(ChatDataModel(id: UUID().uuidString, conversationID: conversationID, text: text, date: date, type: .assistant))
                 delta -= 60*2
             }
-            let setResponsesAction = SetChats(conversationID: conversationID, chats: chats)
+            let setResponsesAction = SetChats(conversationID: conversationID, chats: chats, error: nil)
             self?.dispatch(setResponsesAction)
             mockDate = mockDate.dayBefore
         }
         
     }
     
-    private func fetchMockResponse(conversationID: String) {
+    private func fetchMockResponse(action: GetChatResponse) {
+        
         Task {[weak self] in
-            try? await Task.sleep(for: .seconds(10))
+            try? await Task.sleep(for: .seconds(4))
             guard let chatBotresponse = randomStringGenerator(count: 1).first else {return}
-            let chat = ChatDataModel(id: UUID().uuidString, conversationID: conversationID, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
-            await self?.cache.addChatsToConversation([chat], conversationID: conversationID)
-            let setResponsesAction = SetChatResponse(conversationID: conversationID, chats: [chat])
+            let chat = ChatDataModel(id: UUID().uuidString, conversationID: action.conversationID, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
+            await self?.cache.addChatsToConversation([chat], conversationID: action.conversationID)
+            let setResponsesAction = SetChatResponse(conversationID: action.conversationID, chats: [chat], error: nil)
             self?.dispatch(setResponsesAction)
             Task {@MainActor in
-                let model = ChatMessageModel(id: chat.id, conversationID: conversationID,  text: chat.text, date: chat.date, role: chat.type)
+                let model = ChatMessageModel(id: chat.id, conversationID: action.conversationID,  text: chat.text, date: chat.date, role: chat.type)
                 self?.modelContext.insert(model)
                 do {
                     try self?.modelContext.save()

@@ -11,14 +11,19 @@ protocol ReduxAction {}
 
 protocol ReduxMutatingAction: ReduxAction {}
 
-protocol GetChat: ReduxAction {}
+protocol GetChat: ReduxAction {
+    var retryAttempt: Int {get set}
+}
 
 struct GetChatResponse: GetChat {
     let input: String
     let conversationID: String
+    var retryAttempt: Int
 }
 
 struct GetChats: GetChat {
+    var retryAttempt: Int = 0
+    
     let conversationID: String
 }
 
@@ -28,11 +33,13 @@ protocol SetChat: ReduxMutatingAction {}
 struct SetChatResponse: SetChat {
     let conversationID: String
     let chats: [ChatDataModel]
+    let error: ChatError?
 }
 
 struct SetChats: SetChat {
     let conversationID: String
     let chats: [ChatDataModel]
+    let error: ChatError?
 }
 
 struct SetUserChatMessage: SetChat {
@@ -66,3 +73,5 @@ struct DeleteConversations: ConversationAction {
 struct EditConversation: ConversationAction {
     let conversation: ConversationDataModel
 }
+
+
