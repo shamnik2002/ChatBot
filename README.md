@@ -40,7 +40,8 @@ If you would rather not, you could still try this app using mock responses.
 ### Conversation sequence diagram
 
 # TODOs
-- Error handling like when offline tell user no internet connection, failure of responses API show message to user that something went wrong and allow for retry
+- give chat context to responses API
+- ~~Error handling like when offline tell user no internet connection, failure of responses API show message to user that something went wrong and allow for retry~~
 - ~~Delete conversations, perhapd rename them as well~~
 - cancellation of previous request, if user types before we get response
 - ~~Currently everything is cached in memory, plan is to use SwiftData for persistent storage~~
