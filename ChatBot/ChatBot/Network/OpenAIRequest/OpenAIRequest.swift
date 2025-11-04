@@ -50,8 +50,12 @@ struct ResponsesRequest: RequestProtocol {
         return urlRequest
     }
     
-    init(input: String) {
+    init(input: String, responseId: String?) {
         // add some validation here
-        self.bodyParams = [OpenAIContants.modelKey: OpenAIContants.model, OpenAIContants.inputKey: input]
+        var params = [OpenAIContants.modelKey: OpenAIContants.model, OpenAIContants.inputKey: input]
+        if let responseId {
+            params[OpenAIContants.previousResponseIdKey] = responseId
+        }
+        self.bodyParams = params
     }
 }

@@ -71,21 +71,39 @@ final class ChatMiddleware {
     }
     
     private func fetchResponses(action: GetChatResponse) {
-        let request = ResponsesRequest(input: action.input)
-        let parser = parser
-        networkService.fetchDataWithPublisher(request: request)
-            .flatMap { data in
-                return parser.parse(data: data, type: OpenAIResponse.self)
-            }.sink {[weak self] completion in
-                switch completion {
-                    case .failure(let error):
-                        self?.processChatError(error, originalAction: action)
-                    default:
-                        break
-                    }
-            } receiveValue: {[weak self] result in
-                self?.processChatResponses(result, conversationID: action.conversationID)
-            }.store(in: &cancellables)
+        Task {
+            let convoID = action.conversationID
+            let role = ChatResponseRole.assistant.rawValue
+            var chatFetchDescriptor = FetchDescriptor<ChatMessageModel>(
+                predicate: #Predicate{$0.conversationID == convoID && $0.role == role},
+                sortBy: [SortDescriptor(\.date)]
+            )
+            chatFetchDescriptor.fetchLimit = 1
+            var responseId: String?
+            do {
+                let chats = try modelContext.fetch(chatFetchDescriptor)
+                responseId = chats.first?.responseId
+                
+            }catch {
+                print(error)
+            }
+            
+            let request = ResponsesRequest(input: action.input, responseId: responseId)
+            let parser = parser
+            networkService.fetchDataWithPublisher(request: request)
+                .flatMap { data in
+                    return parser.parse(data: data, type: OpenAIResponse.self)
+                }.sink {[weak self] completion in
+                    switch completion {
+                        case .failure(let error):
+                            self?.processChatError(error, originalAction: action)
+                        default:
+                            break
+                        }
+                } receiveValue: {[weak self] result in
+                    self?.processChatResponses(result, conversationID: action.conversationID)
+                }.store(in: &cancellables)
+        }
     }
     
     private func processChatError(_ error: Error, originalAction: GetChatResponse) {
@@ -124,7 +142,7 @@ final class ChatMiddleware {
             dispatch(getConversationList)
             Task {@MainActor in
                 chats.forEach { data in
-                    let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type)
+                    let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type, responseId: data.responseId)
                     modelContext.insert(model)
                 }
                 do {
@@ -174,7 +192,7 @@ final class ChatMiddleware {
                     sortBy: [SortDescriptor(\.date, order: .forward)]
                 )
                 if let chats = try? modelContext.fetch(descriptor), !chats.isEmpty {
-                    chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: $0.role)}
+                    chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: ChatResponseRole(rawValue: $0.role) ?? .assistant)}
                     await cache.addChatsToConversation(chatDataModels, conversationID: conversationID)
                 }
             }

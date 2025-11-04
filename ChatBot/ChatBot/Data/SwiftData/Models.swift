@@ -26,13 +26,15 @@ final class ChatMessageModel {
     var conversationID: String
     var text: String
     var date: TimeInterval
-    var role: ChatResponseRole
+    var role: String
+    var responseId: String?
     
-    init(id: String, conversationID: String, text: String, date: TimeInterval, role: ChatResponseRole) {
+    init(id: String, conversationID: String, text: String, date: TimeInterval, role: ChatResponseRole, responseId: String? = nil) {
         self.id = id
         self.conversationID = conversationID
         self.text = text
         self.date = date
-        self.role = role
+        self.role = role.rawValue
+        self.responseId = responseId
     }
 }

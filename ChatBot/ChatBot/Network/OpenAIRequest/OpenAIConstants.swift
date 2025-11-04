@@ -14,4 +14,5 @@ struct OpenAIContants {
     static let model = "gpt-5-nano"
     static let inputKey = "input"
     static let API_Secret  = ""
+    static let previousResponseIdKey = "previous_response_id"
 }
