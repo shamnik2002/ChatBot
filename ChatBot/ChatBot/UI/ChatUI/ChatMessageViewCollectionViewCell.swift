@@ -9,14 +9,14 @@ import SwiftUI
 import Combine
 import UIKit
 
+// Collection view cells for all types shown in chat view
+// TODO: see if we can refactor to consolidate some logic here, likely only need one cell
+
 final class ChatMessageViewCollectionViewCell: UICollectionViewCell {
-    
-    
+        
     private var hostingController: UIHostingController<ChatMessageView>?
     override init(frame: CGRect) {
-
         super.init(frame: frame)
-        
     }
     
     required init?(coder: NSCoder) {
@@ -57,9 +57,7 @@ final class ChatDateViewCollectionViewCell: UICollectionViewCell {
     
     private var hostingController: UIHostingController<ChatDateView>?
     override init(frame: CGRect) {
-
         super.init(frame: frame)
-        
     }
     
     required init?(coder: NSCoder) {
@@ -99,9 +97,7 @@ final class ChatSystemMessageViewCollectionViewCell: UICollectionViewCell {
     
     private var hostingController: UIHostingController<ChatSystemMessageView>?
     override init(frame: CGRect) {
-
         super.init(frame: frame)
-        
     }
     
     required init?(coder: NSCoder) {

@@ -8,6 +8,8 @@ import Combine
 import Foundation
 import SwiftUI
 
+///ChatSystemMessageView
+/// Displays system message like thinking.. or error
 struct ChatSystemMessageView: View {
     
     struct Constants {
@@ -40,6 +42,7 @@ struct ChatSystemMessageView: View {
 
 final class ChatSystemMessageViewModel: ObservableObject {
     
+    // Array of text to keep switching between thinking... or searching.., like chatgpt app
     private let texts: [String]
     private var cancellables = Set<AnyCancellable>()
     private var index = 0

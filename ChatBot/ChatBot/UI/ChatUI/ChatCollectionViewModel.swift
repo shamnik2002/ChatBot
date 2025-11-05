@@ -31,13 +31,17 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     private var isLoading = false
     private var dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>
     private var conversationDataModel: ConversationDataModel
+    // we should always just have a single loading message shown
     private var loadingMessage = ChatSystemMessageDataModel(id: UUID().uuidString, texts: ["Thinking...", "Searching..."], type: .loading)
+    // we should always just have a single retryable error shown
+    // Note other non-retryable errors can be multiple if needed
     private var retryableErrorMessage = ChatSystemMessageDataModel(id: UUID().uuidString, texts: ["Oops something went wrong"], type: .retryableError, retryableAction: nil)
 
     init(appStore: AppStore, conversationDataModel: ConversationDataModel, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>) {
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
         self.dataProcessor = dataProcessor
+        // Listen to responses from OpenAI API
         self.appStore.chatState.responsesPublisher.receive(on: RunLoop.main)
             .sink {[weak self] chatResponse in
                 guard conversationDataModel.id == chatResponse.conversationID else {return}
@@ -45,6 +49,7 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
                 self?.processResponse(chatResponse)
             }.store(in: &cancellables)
         
+        // Listen to user inputs
         self.appStore.chatState.userChatMessagePublisher.receive(on: RunLoop.main)
             .sink {[weak self] (convoID, chatDataModel) in
                 guard let self else {return}
@@ -66,11 +71,12 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     }
     
     func processError(_ chatResponse:ChatResponses) {
+        // make sure to rmeove the loading message
         self.chatCollectionViewDataItems.removeAll { item in
             item.id == loadingMessage.id
         }
-        //chatCollectionViewDataItems.append(loadingMessage)
         var message: ChatSystemMessageDataModel?
+        // Check error type and create appropriate message
         guard let error = chatResponse.error else {return}
         switch error.error {
         case .accessDenied:
@@ -81,13 +87,17 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
         case .unknownError:
             message = ChatSystemMessageDataModel(id: UUID().uuidString, texts: ["Oops something went wrong"], type: .error)
         }
+        // insert and trigger UI update
         guard let message else {return}
         self.chatCollectionViewDataItems.append(message)
         internalChatsPublisher.send((self.chatCollectionViewDataItems, .appended))
     }
     
+    /// processResponse
+    /// Process the data we received from chat state
     func processResponse(_ chatResponse:ChatResponses) {
     
+        // If we have an error process it
         guard chatResponse.error == nil else {
             processError(chatResponse)
             return
@@ -97,10 +107,12 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
         
         var chatsUpdateType: ChatsUpdateType = .appended
 
+        // Remove loading message
         self.chatCollectionViewDataItems.removeAll { item in
             item.id == loadingMessage.id
         }
         
+        // Based on date decide whether the data we received should be added to the bottom or inserted above
         if !self.chatCollectionViewDataItems.isEmpty {
             // we have some chats
             // check dates to confirm whether to append or insert
@@ -136,27 +148,40 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
             self.chatCollectionViewDataItems.append(contentsOf: chatCollectionViewDataItems)
         }
 
+        // Trigger UI update
         internalChatsPublisher.send((self.chatCollectionViewDataItems, chatsUpdateType))
     }
     
+    /// processUserChatData
+    /// Called when we receive user input from Chat state
     func processUserChatData(_ chatDataModel: ChatDataModel) {
         
+        // if the date is same we do not want reinsert date data model
+        // LookupData helps dedup that
         let lookupData:[ChatCollectionViewDataItem] = [chatCollectionViewDataItems.last(where: {$0 is DateDataModel})].compactMap{$0}
+        // Process the data, so we interleave the date in between chat messages
         var chatCollectionViewDataItems = dataProcessor.process(data: [chatDataModel], lookupData: lookupData)
+        // add loading message
         chatCollectionViewDataItems.append(loadingMessage)
         self.chatCollectionViewDataItems.append(contentsOf: chatCollectionViewDataItems)
         isLoading = true
+        // trigger UI update
         internalChatsPublisher.send((self.chatCollectionViewDataItems, .appended))
     }
-    
+
+    ///retryAction
+    /// Called when user taps on the retry button when they are presented a retryable error
     func retryAction(_ action: GetChat) {
-        print("###### retrying")
+        // remove error message
         chatCollectionViewDataItems.removeAll { item in
             item.id == retryableErrorMessage.id
         }
+        // add loading message
         chatCollectionViewDataItems.append(loadingMessage)
         isLoading = true
+        // trigger UI update
         internalChatsPublisher.send((self.chatCollectionViewDataItems, .appended))
+        // dispatch original actor by updating retry attempt
         var newAction = action
         newAction.retryAttempt += 1
         appStore.dispacther.dispatch(newAction)

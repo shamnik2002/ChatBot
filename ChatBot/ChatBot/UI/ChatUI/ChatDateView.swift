@@ -9,6 +9,8 @@ import Combine
 import Foundation
 import SwiftUI
 
+///ChatDateView
+///Displays the date in chat view
 struct ChatDateView: View {
     
     struct Constants {

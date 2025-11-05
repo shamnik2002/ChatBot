@@ -7,6 +7,10 @@
 
 import Foundation
 import Combine
+// NOTE: Custom state implementation
+// Usually in redux state holds the data, but since we are always publishing/ using declarative approach
+// we are not holding the data rather relying o publishers to publish data as soon as available
+// In future, if it is needed we can hold data here.
 
 final class ConversationState {
     

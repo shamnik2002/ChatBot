@@ -6,6 +6,8 @@
 //
 import Combine
 import Foundation
+/// Dispatcher
+/// Uses the @published propertries to send actions to appropriate handlers like middleware or state
 
 typealias Dispatch = (ReduxAction) -> Void
 final class Dispatcher {

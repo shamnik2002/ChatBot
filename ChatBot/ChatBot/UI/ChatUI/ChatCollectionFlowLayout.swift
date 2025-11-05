@@ -7,7 +7,8 @@
 import Foundation
 import UIKit
 import Combine
-
+///ChatCollectionFlowLayout
+/// Flow layout for the chat view
 final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
     
     private var attributeList = [UICollectionViewLayoutAttributes]()
@@ -49,16 +50,19 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
             let chat = chats[row]
             
             switch chat {
+                // Chat messages layout
                 case let chat as ChatDataModel:
                     let attributes = getAttributesForChatDataModel(chat, collectionView: collectionView, row: row, yOffset: yOffset)
                     yOffset += attributes.frame.height + Constants.interimSpacing
                     attributeList.append(attributes)
                
+                // Date layout, centered horizontally
                 case let chat as DateDataModel:
                     let attributes = getAttributesForDateDataModel(chat, collectionView: collectionView, row: row, yOffset: yOffset)
                     yOffset += attributes.frame.height + Constants.interimSpacing
                     attributeList.append(attributes)
 
+                // System message like thinking.. or errors layout
                 case let chat as ChatSystemMessageDataModel:
                     let attributes = getAttributesForSystemMessageDataModel(chat, collectionView: collectionView, row: row, yOffset: yOffset)
                     yOffset += attributes.frame.height + Constants.interimSpacing
@@ -72,6 +76,8 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
         collectionViewHeight = yOffset
     }
     
+    /// getAttributesForChatDataModel
+    /// User input is trailing and assisstant response takes up the width with some margin
     func getAttributesForChatDataModel(_ chatDataModel: ChatDataModel, collectionView: UICollectionView, row: Int, yOffset: CGFloat) -> UICollectionViewLayoutAttributes {
         
         let attributedText = NSAttributedString(
@@ -93,6 +99,8 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
         return attributes
     }
     
+    /// getAttributesForDateDataModel
+    /// Date is centered horizontally
     func getAttributesForDateDataModel(_ dateDataModel: DateDataModel, collectionView: UICollectionView, row: Int, yOffset: CGFloat) -> UICollectionViewLayoutAttributes {
         
         let attributedText = NSAttributedString(
@@ -116,6 +124,9 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
         return attributes
     }
     
+    /// getAttributesForSystemMessageDataModel
+    /// System message follows similar to assisstant response
+    // TODO: currently assumes single line, should handle multi line errors, espcially for larger font sizes
     func getAttributesForSystemMessageDataModel(_ dateDataModel: ChatSystemMessageDataModel, collectionView: UICollectionView, row: Int, yOffset: CGFloat) -> UICollectionViewLayoutAttributes {
         
         let attributedText = NSAttributedString(

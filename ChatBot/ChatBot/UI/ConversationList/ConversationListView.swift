@@ -20,6 +20,7 @@ final class ConversationListViewModel: ObservableObject {
     private(set) var appStore: AppStore
     init(appStore: AppStore) {
         self.appStore = appStore
+        // Listen list data updates
         self.appStore.conversationState.conversationListPublisher
             .receive(on: RunLoop.main)
             .sink {[weak self] conversationList in
@@ -28,16 +29,22 @@ final class ConversationListViewModel: ObservableObject {
             }.store(in: &cancellables)
     }
     
+    /// fetchConversations
+    /// Create + dispatch get convo list from store/cache
     func fetchConversations() {
         let getConvo = GetConversationList()
         appStore.dispacther.dispatch(getConvo)
     }
 
+    /// deleteConversations
+    /// Trigger delete convo action to delete from store/cache
     func deleteConversations(_ conversations: [ConversationDataModel]) {
         let deleteAction = DeleteConversations(conversations: conversations)
         appStore.dispacther.dispatch(deleteAction)
     }
     
+    /// editConversation
+    /// Trigger edit (rename) action to update convo in store/cache
     func editConversation(_ conversation: ConversationDataModel, title: String) {
         let newConversation = conversation
         newConversation.title = title
@@ -93,6 +100,7 @@ struct ConversationListView: View {
     }
 }
 
+/// Mock convo data generator
 func mockConversationList() -> [Conversation] {
     
     var conversations = [Conversation]()

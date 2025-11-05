@@ -9,6 +9,8 @@ import Combine
 import Foundation
 import SwiftUI
 
+/// ChatMessageView
+/// Displays the user input and response in chat view
 struct ChatMessageView: View {
     
     struct Constants {
@@ -20,6 +22,7 @@ struct ChatMessageView: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 10){
+            // based on whether it is user input or assisstant response we add spacing
             if viewModel.chatDataModel.type == .user {
                 Spacer()
             }
@@ -36,6 +39,8 @@ struct ChatMessageView: View {
     }
 }
 
+/// ChatMessageViewModel
+/// Provides appropriate UI data based on whether it is user input or assisstant response
 final class ChatMessageViewModel: ObservableObject {
     
     @Published var chatDataModel: ChatDataModel

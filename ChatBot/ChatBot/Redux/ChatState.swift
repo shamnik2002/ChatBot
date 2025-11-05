@@ -8,6 +8,13 @@
 import Foundation
 import Combine
 
+// NOTE: Custom state implementation
+// Usually in redux state holds the data, but since we are always publishing/ using declarative approach
+// we are not holding the data rather relying o publishers to publish data as soon as available
+// In future, if it is needed we can hold data here.
+
+/// ChatResponses
+/// Holds the conversation info or error
 struct ChatResponses {
     var conversationID: String
     var chats: [ChatDataModel]
@@ -31,7 +38,8 @@ final class ChatState {
         }.store(in: &cancellables)
     }
     
-    func handle(action: ReduxMutatingAction?) {
+    /// Let appropriate listener know the data is available
+    private func handle(action: ReduxMutatingAction?) {
         switch action {
             case let action as SetChatResponse:
                 let chatresponses = ChatResponses(conversationID: action.conversationID, chats: action.chats, error: action.error)

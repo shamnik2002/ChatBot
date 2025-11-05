@@ -8,6 +8,8 @@
 import SwiftUI
 import Combine
 
+/// ChatContainerView
+/// Holds the ChatCollectionViewController
 struct ChatContainerView: View {
     @StateObject var viewModel: ChatContainerViewModel
     @State private var text: String = ""
@@ -36,6 +38,8 @@ struct ChatContainerView: View {
     }
 }
 
+///ChatCollectionViewControllerRepresentable
+///Allows us to insert UIKit view within SwiftUI
 struct ChatCollectionViewControllerRepresentable: UIViewControllerRepresentable {
     
     private let appStore: AppStore
@@ -52,11 +56,7 @@ struct ChatCollectionViewControllerRepresentable: UIViewControllerRepresentable 
     }
     
     func updateUIViewController(_ uiViewController: ChatCollectionViewController, context: Context) {
-        
     }
     
     typealias UIViewControllerType = ChatCollectionViewController
-    
-    
-    
 }

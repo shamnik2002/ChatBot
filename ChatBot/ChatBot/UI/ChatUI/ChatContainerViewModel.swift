@@ -16,11 +16,15 @@ final class ChatContainerViewModel: ObservableObject {
         self.conversationDataModel = conversationDataModel
     }
     
-    func fetchResponse(input: String) {
+    ///fetchResponse
+    /// Creates and dispatcher the action to fetch response via OpenAi API
+    private func fetchResponse(input: String) {
         let getResponses = GetChatResponse(input: input, conversationID: conversationDataModel.id, retryAttempt: 0)
         self.appStore.dispacther.dispatch(getResponses)
     }
     
+    /// addText
+    /// Triggered when user submits the text
     func addText(_ text: String) {
         fetchResponse(input: text)
     }

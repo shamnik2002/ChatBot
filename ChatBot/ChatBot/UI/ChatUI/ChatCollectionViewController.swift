@@ -46,6 +46,8 @@ final class ChatCollectionViewController: UIViewController {
         collectionView.register(ChatMessageViewCollectionViewCell.self, forCellWithReuseIdentifier: "chat")
         collectionView.register(ChatDateViewCollectionViewCell.self, forCellWithReuseIdentifier: "date")
         collectionView.register(ChatSystemMessageViewCollectionViewCell.self, forCellWithReuseIdentifier: "systemMessage")
+        
+        // Diffable data source to reflect changes
         dataSource = UICollectionViewDiffableDataSource<Int, ChatCollectionViewDataItem>(collectionView: collectionView, cellProvider: {[weak self] collectionView, indexPath, item in
             
             switch item {
@@ -86,13 +88,15 @@ final class ChatCollectionViewController: UIViewController {
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
+        // Start listening to chats update
         self.viewModel.chatsPublisher
             .receive(on: RunLoop.main)
             .sink {[weak self] (chats, type) in
                 self?.reloadChats(chats: chats, type: type)
             }.store(in: &cancellables)
         
-        viewModel.fetchChats()        
+        // Fetch any existing old chats
+        viewModel.fetchChats()
     }
     
     func applySnapshot() {
@@ -102,13 +106,14 @@ final class ChatCollectionViewController: UIViewController {
         dataSource?.apply(snapshot, animatingDifferences: true)
     }
     
-    
+    // Called when we get any updates
     func reloadChats(chats: [ChatCollectionViewDataItem], type: ChatsUpdateType) {
                 
         self.chats = chats
         Task {@MainActor in
             applySnapshot()
             
+            // when added to the bottom we need to make sure to scroll to bring the last chat in visible range
             if type == .appended {
                 collectionView?.scrollToItem(at: lastIndexPath, at: .top, animated: true)
             }
@@ -123,6 +128,8 @@ final class ChatCollectionViewController: UIViewController {
 extension ChatCollectionViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         guard (collectionView.isTracking || collectionView.isDecelerating)  &&  indexPath.row < 3 else {return}
+        // TODO: find a better way to handle this
+        // TODO: used if we want tp paginate old chats
 //        fetchOldChats()
     }
 }

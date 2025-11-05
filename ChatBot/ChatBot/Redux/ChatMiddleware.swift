@@ -172,7 +172,7 @@ final class ChatMiddleware {
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
             Task {@MainActor in
-                // Make sure to
+                // Insert everything in swiftdata store
                 chats.forEach { data in
                     let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type, responseId: data.responseId)
                     modelContext.insert(model)
@@ -186,6 +186,8 @@ final class ChatMiddleware {
         }
     }
     
+    /// addUserMessage
+    /// Handles properly saving the user input in cache/store
     private func addUserMessage(input: String, conversationID: String) {
         Task {
             
@@ -193,13 +195,16 @@ final class ChatMiddleware {
             let timeInterval = ceil(date.timeIntervalSince1970)
             let uuid = UUID().uuidString
             let userChat = ChatDataModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, type: ChatResponseRole.user)
+            // add the chat to cache to correct conversation
             await cache.addChatsToConversation([userChat], conversationID: conversationID)
+            // if this was newly created convo then update the conversation title to reflect the chat message
             let convo = await cache.getConversation(for: conversationID)
             if let convo = convo, convo.title.isEmpty {
-                convo.title = String(input.prefix(35))
+                convo.title = String(input.prefix(35)) // we currently just grab the first 35 chars, needs to be tweaked
                 await cache.setConversation(convo, for: conversationID)
                 modelContext.insert(ConversationModel(id: convo.id, title: convo.title, date: convo.date))
-            }            
+            }
+            // save the chat to store
             let chatMsgModel = ChatMessageModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, role: ChatResponseRole.user)
             modelContext.insert(chatMsgModel)
             do {
@@ -207,33 +212,43 @@ final class ChatMiddleware {
             }catch {
                 print(error.localizedDescription)
             }
+            // refresh the conversation list
+            // TODO: only do this for new conversations
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
+            // Tell state to publish the data
             let setUserChatMessageAction = SetUserChatMessage(conversationID: conversationID, chatDataModel: userChat)
             dispatch(setUserChatMessageAction)
         }
     }
     
+    /// fetchChats
+    /// Fetches the saved chats for a conversation from cache/store
     private func fetchChats(conversationID: String) {
         let dispatch = self.dispatch
         Task {
+            // first check if we have it in cache
             var chatDataModels = await cache.getChats(conversationID: conversationID)
             if chatDataModels.isEmpty {
+                // if not then fetch from store
                 let descriptor = FetchDescriptor<ChatMessageModel>(
                     predicate: #Predicate{$0.conversationID == conversationID},
                     sortBy: [SortDescriptor(\.date, order: .forward)]
                 )
                 if let chats = try? modelContext.fetch(descriptor), !chats.isEmpty {
                     chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: ChatResponseRole(rawValue: $0.role) ?? .assistant)}
+                    // add them to cache for faster retrieval next time
                     await cache.addChatsToConversation(chatDataModels, conversationID: conversationID)
                 }
             }
-                        
+            // Tell state to publish data
             let setChatAction = SetChats(conversationID: conversationID, chats: chatDataModels, error: nil)
             dispatch(setChatAction)
         }
     }
     
+    /// fetchMockResponses
+    /// Convenience method to work with mock data instead of using up your tokens
     private func fetchMockResponses(conversationID: String) {
         
         Task {[weak self] in
@@ -252,6 +267,8 @@ final class ChatMiddleware {
         
     }
     
+    /// fetchMockResponse
+    /// Convenience method to work with mock data instead of using up your tokens
     private func fetchMockResponse(action: GetChatResponse) {
         
         Task {[weak self] in
@@ -274,6 +291,7 @@ final class ChatMiddleware {
     }
 }
 
+// For building mock data
 var mockDate = Date()
 
 extension Date {
@@ -296,6 +314,7 @@ extension Date {
     }
 }
 
+// For building mock data
 func randomStringGenerator(count: Int, minStringLength: Int = 500, maxStringLength: Int = 1000) -> [String] {
     var strings = [String]()
     let letters = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
