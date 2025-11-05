@@ -16,6 +16,7 @@ If you would rather not, you could still try this app using mock responses.
 - Combine
 - SwiftUI List views + cell views
 - UIKit CollectionView with diffable datasource
+- SwiftData
 
 # Architecture
 
