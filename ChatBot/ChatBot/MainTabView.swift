@@ -16,13 +16,12 @@ final class MainTabViewModel: ObservableObject {
 }
 
 struct MainTabView: View {
-    
     @Environment(\.modelContext) var modelContext
     @StateObject var viewModel: MainTabViewModel
     
     var body: some View {
         TabView {
-            HomeView(homeViewModel: HomeViewModel(modelContext: modelContext))
+            HomeView(homeViewModel: HomeViewModel(modelContainer: modelContext.container))
                 .tabItem {
                     Label("Home", systemImage: "house")
                 }

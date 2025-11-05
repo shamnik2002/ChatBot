@@ -33,7 +33,7 @@ final class ChatMiddleware {
     private let dispatch: Dispatch
     private let cache: CBCache
     private let featureConfig: FeatureConfig
-    private let modelContext: ModelContext
+    private let chatDatabase: ChatDatabaseActor
     private let maxRetryAttempts = 3
     
     init(dispatch: @escaping Dispatch,
@@ -41,7 +41,7 @@ final class ChatMiddleware {
          parser: ParseProtocol,
          cache: CBCache,
          featureConfig: FeatureConfig,
-         modelContext: ModelContext,
+         chatDatabase: ChatDatabaseActor,
          listner: AnyPublisher<GetChat?, Never>) {
         
         self.dispatch = dispatch
@@ -49,7 +49,7 @@ final class ChatMiddleware {
         self.parser = parser
         self.cache = cache
         self.featureConfig = featureConfig
-        self.modelContext = modelContext
+        self.chatDatabase = chatDatabase
         
         // Listen to any Get chat actions dispatcher sends
         listner.sink {[weak self] action in
@@ -85,28 +85,7 @@ final class ChatMiddleware {
     /// Fetch responses from OpenAI
     private func fetchResponses(action: GetChatResponse) {
         Task {
-            // Predicate sometimes can't handle keypath so read them in vars here
-            let convoID = action.conversationID
-            let role = ChatResponseRole.assistant.rawValue
-            // predicate to fetch last response we got from OpenAI to grab the response_id
-            // responseId is used to tell OpenAI the context of the conversation
-            // Role is how we filter, since we don't want to look at any user messages
-            var chatFetchDescriptor = FetchDescriptor<ChatMessageModel>(
-                predicate: #Predicate{$0.conversationID == convoID && $0.role == role},
-                sortBy: [SortDescriptor(\.date)]
-            )
-            chatFetchDescriptor.fetchLimit = 1
-            var responseId: String?
-            do {
-                let chats = try modelContext.fetch(chatFetchDescriptor)
-                responseId = chats.first?.responseId
-                
-            }catch {
-                // TODO: propagate the error back to app or log errors
-                // this error is from swiftdata if we fail to fetch data
-                print(error)
-            }
-            
+            let responseId = await chatDatabase.getLastAssisstantResponseIdFor(conversationID: action.conversationID)
             // Create the request and parser
             let request = ResponsesRequest(input: action.input, responseId: responseId)
             let parser = parser
@@ -171,18 +150,7 @@ final class ChatMiddleware {
             // TODO: only do this for new conversations
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
-            Task {@MainActor in
-                // Insert everything in swiftdata store
-                chats.forEach { data in
-                    let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type, responseId: data.responseId)
-                    modelContext.insert(model)
-                }
-                do {
-                    try modelContext.save()
-                }catch {
-                    print(error.localizedDescription)
-                }
-            }
+            await chatDatabase.addChats(chats, for: conversationID)
         }
     }
     
@@ -202,16 +170,9 @@ final class ChatMiddleware {
             if let convo = convo, convo.title.isEmpty {
                 convo.title = String(input.prefix(35)) // we currently just grab the first 35 chars, needs to be tweaked
                 await cache.setConversation(convo, for: conversationID)
-                modelContext.insert(ConversationModel(id: convo.id, title: convo.title, date: convo.date))
+                await chatDatabase.addConversation(convo)
             }
-            // save the chat to store
-            let chatMsgModel = ChatMessageModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, role: ChatResponseRole.user)
-            modelContext.insert(chatMsgModel)
-            do {
-                try modelContext.save()
-            }catch {
-                print(error.localizedDescription)
-            }
+            await chatDatabase.addChats([userChat], for: conversationID)
             // refresh the conversation list
             // TODO: only do this for new conversations
             let getConversationList = GetConversationList()
@@ -230,14 +191,8 @@ final class ChatMiddleware {
             // first check if we have it in cache
             var chatDataModels = await cache.getChats(conversationID: conversationID)
             if chatDataModels.isEmpty {
-                // if not then fetch from store
-                let descriptor = FetchDescriptor<ChatMessageModel>(
-                    predicate: #Predicate{$0.conversationID == conversationID},
-                    sortBy: [SortDescriptor(\.date, order: .forward)]
-                )
-                if let chats = try? modelContext.fetch(descriptor), !chats.isEmpty {
-                    chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: ChatResponseRole(rawValue: $0.role) ?? .assistant)}
-                    // add them to cache for faster retrieval next time
+                chatDataModels = await chatDatabase.getChats(conversationID: conversationID)
+                if !chatDataModels.isEmpty {
                     await cache.addChatsToConversation(chatDataModels, conversationID: conversationID)
                 }
             }
@@ -278,15 +233,7 @@ final class ChatMiddleware {
             await self?.cache.addChatsToConversation([chat], conversationID: action.conversationID)
             let setResponsesAction = SetChatResponse(conversationID: action.conversationID, chats: [chat], error: nil)
             self?.dispatch(setResponsesAction)
-            Task {@MainActor in
-                let model = ChatMessageModel(id: chat.id, conversationID: action.conversationID,  text: chat.text, date: chat.date, role: chat.type)
-                self?.modelContext.insert(model)
-                do {
-                    try self?.modelContext.save()
-                }catch {
-                    print(error.localizedDescription)
-                }
-            }
+            await self?.chatDatabase.addChats([chat], for: action.conversationID)
         }
     }
 }

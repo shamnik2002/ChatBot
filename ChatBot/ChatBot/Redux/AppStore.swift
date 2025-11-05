@@ -29,19 +29,22 @@ final class AppStore {
     // Hold feature flags
     let featureConfig: FeatureConfig
     // Model context for Swift Data (currently holds chat and conversation models)
-    let modelContext: ModelContext
+    let modelContainer: ModelContainer
+    // Actor for database ops
+    let chatDatabase: ChatDatabaseActor
     
-    init(modelContext: ModelContext) {
+    init(modelContainer: ModelContainer) {
         self.dispacther = Dispatcher()
         self.cache = CBCache()
         self.featureConfig = FeatureConfig()
-        self.modelContext = modelContext
+        self.modelContainer = modelContainer
+        self.chatDatabase = ChatDatabaseActor(modelContainer: modelContainer)
         
         self.chatState = ChatState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$setChat.eraseToAnyPublisher())
-        self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, featureConfig: self.featureConfig, modelContext: self.modelContext, listner: self.dispacther.$getChat.eraseToAnyPublisher())
+        self.chatMiddleWare = ChatMiddleware(dispatch: self.dispacther.dispatch(_:), networkService: NetworkService(), parser: Parser(), cache: self.cache, featureConfig: self.featureConfig, chatDatabase: self.chatDatabase, listner: self.dispacther.$getChat.eraseToAnyPublisher())
         
         self.conversationState = ConversationState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$conversationUpdateAction.eraseToAnyPublisher())
-        self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, modelContext: self.modelContext, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
+        self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, chatDataBase: self.chatDatabase, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
     }
 }
 

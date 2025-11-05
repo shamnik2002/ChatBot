@@ -11,8 +11,8 @@ import SwiftData
 final class HomeViewModel: ObservableObject {
     private(set) var appStore: AppStore
     
-    init(modelContext: ModelContext) {
-        self.appStore = AppStore(modelContext: modelContext)
+    init(modelContainer: ModelContainer) {
+        self.appStore = AppStore(modelContainer: modelContainer)
     }
         
     func createNewConversation() -> ConversationDataModel {
