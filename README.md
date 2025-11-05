@@ -40,10 +40,12 @@ If you would rather not, you could still try this app using mock responses.
 ### Conversation sequence diagram
 
 # TODOs
-- give chat context to responses API
+- ~~give chat context to responses API~~
 - ~~Error handling like when offline tell user no internet connection, failure of responses API show message to user that something went wrong and allow for retry~~
 - ~~Delete conversations, perhapd rename them as well~~
 - cancellation of previous request, if user types before we get response
 - ~~Currently everything is cached in memory, plan is to use SwiftData for persistent storage~~
+- Add pagination ability to only fetch recent convresations/chat messages for a conversation instead of everything even from persistent store
 - Eventually use CloudKit to store data on cloud and only fetch what is recent/needed
-- After cloudkit, add pagination ability to only fetch recent chat messages for a conversation instead of everything
+- Show usage data
+- user settings to send context vs not
