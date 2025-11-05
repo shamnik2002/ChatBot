@@ -8,7 +8,19 @@ You need to add your own API_Key in `OpenAIContants` struct if you want to use a
 If you would rather not, you could still try this app using mock responses.
 
 
-![chabot_gif](https://github.com/user-attachments/assets/1aa555cf-89ea-46c3-97a1-ef0db0a5dc88)
+# Demo
+
+## Create Conversation
+![NewChat](https://github.com/user-attachments/assets/3437e00f-2a4a-45d2-89f6-8d7ed47d262c)
+
+## Delete Conversation
+![DeleteConvo](https://github.com/user-attachments/assets/46351058-32a9-4e8c-8333-e17285371255)
+
+## Remomber context to continue previous chat
+![RememberContextFromPrevConvo](https://github.com/user-attachments/assets/a3ac038e-7d47-4336-9db2-c9f99b13a983)
+
+## Edit Conversation
+![RenameConvo](https://github.com/user-attachments/assets/dcbef112-31b7-4888-84e8-8d2e2b43ae44)
 
 
 # Key iOS Features
