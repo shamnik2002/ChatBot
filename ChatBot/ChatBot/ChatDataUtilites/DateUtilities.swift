@@ -27,7 +27,7 @@ fileprivate var dayDateFormatter: DateFormatter = {
 }()
 
 extension Date {
-    
+    /// Relative date e.g today, for any date in the last week Sun 2, dates beyond last week show Oct 30, and beyond current year show 1/12/2024
     func shortRelativeDate() -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: self)
         let currentDate = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: Date())

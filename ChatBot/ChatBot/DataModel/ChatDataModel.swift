@@ -8,6 +8,8 @@
 import Foundation
 import Combine
 
+/// ChatCollectionViewDataItem
+/// DataModel used by collectionview diffable data source
 nonisolated class ChatCollectionViewDataItem: Hashable, @unchecked Sendable, Codable {
     
     let id: String
@@ -25,6 +27,8 @@ nonisolated class ChatCollectionViewDataItem: Hashable, @unchecked Sendable, Cod
     }
 }
 
+/// ChatDataModel
+/// Data model used to display chat message (from user or OpenAI API)
 nonisolated final class ChatDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
     
     let text: String
@@ -46,6 +50,8 @@ nonisolated final class ChatDataModel: ChatCollectionViewDataItem, @unchecked Se
     }
 }
 
+/// DateDataModel
+/// Data model used to display the date sections
 nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
     let date: TimeInterval
     
@@ -59,12 +65,18 @@ nonisolated final class DateDataModel: ChatCollectionViewDataItem, @unchecked Se
     }
 }
 
+/// ChatSystemMessageType
+/// defines the different types of system message to display to user in the chat view
 enum ChatSystemMessageType {
     case loading
     case error
     case retryableError
 }
 
+/// ChatSystemMessageDataModel
+/// Displays systems like thinking... when API calls goes out and we are awaiting response
+/// shows error like access denied on missing API key
+/// Show retryable errors and allows user to repeat the last action
 nonisolated final class ChatSystemMessageDataModel: ChatCollectionViewDataItem, @unchecked Sendable {
 
     let texts: [String]
@@ -88,6 +100,8 @@ nonisolated final class ChatSystemMessageDataModel: ChatCollectionViewDataItem, 
     }
 }
 
+/// ConversationDataModel
+/// Data model used to display the conversations in the list
 nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
     static func == (lhs: ConversationDataModel, rhs: ConversationDataModel) -> Bool {
         lhs.id == rhs.id
@@ -110,6 +124,8 @@ nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
     }
 }
 
+/// ChatReponsesTransformer
+/// Transforms OpenAI response into ChatDataModel
 struct ChatReponsesTransformer {
         
     static func chatDataModelFromOpenAIResponses(_ chatResponses: OpenAIResponse, conversationID: String) -> [ChatDataModel] {

@@ -7,12 +7,17 @@
 import Foundation
 import Combine
 
+/// Data Processor
+/// Tranforms input data by making necessary changes like adds, edits, removes
 protocol DataProcessor<InputDataType, OutputDataType> {
     associatedtype InputDataType: Hashable
     associatedtype OutputDataType: Hashable
     func process(data: InputDataType, lookupData:OutputDataType?) -> OutputDataType
 }
 
+/// ChatDataProcessor
+/// Accepts ChatDataModel and returns the data that can be displayed in the ChatCollectionView
+/// Adds the necessary date sections by processing data and dedupes based on lookupData
 final class ChatDataProcessor: DataProcessor {
     typealias InputDataType = [ChatDataModel]
     typealias OutputDataType = [ChatCollectionViewDataItem]

@@ -31,6 +31,7 @@ struct NetworkService: NetworkProtocol {
                     throw NetworkError.unknownError
                 }
                 
+                // Map to our error enum
                 switch httpResponse.statusCode {
                     case 200...299:
                         return response.data

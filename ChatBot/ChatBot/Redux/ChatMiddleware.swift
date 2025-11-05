@@ -9,17 +9,22 @@ import Foundation
 import Combine
 import SwiftData
 
+/// ChatErrorType
 enum ChatErrorType: String {
     case retryable
     case accessDenied
     case unknownError
 }
 
+/// ChatError
+/// Holds the original action to allow retrying in case the error is retryable
 struct ChatError {
     let error: ChatErrorType
     let originalAction: GetChat
 }
 
+/// ChatMiddleware
+/// Responsible for fetching/saving  chats from/to  cache/store/remote
 final class ChatMiddleware {
     
     private let networkService: NetworkProtocol
@@ -45,6 +50,8 @@ final class ChatMiddleware {
         self.cache = cache
         self.featureConfig = featureConfig
         self.modelContext = modelContext
+        
+        // Listen to any Get chat actions dispatcher sends
         listner.sink {[weak self] action in
             guard let action = action else { return }
             self?.handle(action: action)
@@ -53,27 +60,37 @@ final class ChatMiddleware {
     
     private func handle(action: ReduxAction) {
         switch action {
-            case let action as GetChatResponse:            
+            case let action as GetChatResponse:
+            // Check if we are retying the request
             if action.retryAttempt <= 0 {
+                // we do not want to add user's input chat message again when retrying
                 addUserMessage(input: action.input, conversationID: action.conversationID)
             }
+            // if feature flag to use OpenAI API is enabled and we have a API key then fetch from remote
             if featureConfig.enableOpenAIResponsesAPI && !OpenAIContants.API_Secret.isEmpty {
                 fetchResponses(action: action)
             }else {
+                // or just use mock response
                 fetchMockResponse(action: action)
             }
                 break
         case let action as GetChats:
+            // fetch chats from store/cache
             fetchChats(conversationID: action.conversationID)
             default:
                 break
         }
     }
     
+    /// Fetch responses from OpenAI
     private func fetchResponses(action: GetChatResponse) {
         Task {
+            // Predicate sometimes can't handle keypath so read them in vars here
             let convoID = action.conversationID
             let role = ChatResponseRole.assistant.rawValue
+            // predicate to fetch last response we got from OpenAI to grab the response_id
+            // responseId is used to tell OpenAI the context of the conversation
+            // Role is how we filter, since we don't want to look at any user messages
             var chatFetchDescriptor = FetchDescriptor<ChatMessageModel>(
                 predicate: #Predicate{$0.conversationID == convoID && $0.role == role},
                 sortBy: [SortDescriptor(\.date)]
@@ -85,9 +102,12 @@ final class ChatMiddleware {
                 responseId = chats.first?.responseId
                 
             }catch {
+                // TODO: propagate the error back to app or log errors
+                // this error is from swiftdata if we fail to fetch data
                 print(error)
             }
             
+            // Create the request and parser
             let request = ResponsesRequest(input: action.input, responseId: responseId)
             let parser = parser
             networkService.fetchDataWithPublisher(request: request)
@@ -95,17 +115,21 @@ final class ChatMiddleware {
                     return parser.parse(data: data, type: OpenAIResponse.self)
                 }.sink {[weak self] completion in
                     switch completion {
+                        // process errors
                         case .failure(let error):
                             self?.processChatError(error, originalAction: action)
                         default:
                             break
                         }
                 } receiveValue: {[weak self] result in
+                    // process valid response
                     self?.processChatResponses(result, conversationID: action.conversationID)
                 }.store(in: &cancellables)
         }
     }
     
+    /// processChatError
+    /// Sets the appropriate error type and whether we can continue to retry
     private func processChatError(_ error: Error, originalAction: GetChatResponse) {
         var errorType: ChatErrorType = .unknownError
         if originalAction.retryAttempt < maxRetryAttempts {
@@ -126,21 +150,29 @@ final class ChatMiddleware {
                     break
             }
         }
-                
+                        
         let error = ChatError(error: errorType, originalAction: originalAction)
         let setChatResponse = SetChatResponse(conversationID: originalAction.conversationID, chats: [], error: error)
         dispatch(setChatResponse)
     }
     
+    /// processChatResponses
+    ///  Processes the response and adds it to cache/store
     private func processChatResponses(_ responses: OpenAIResponse, conversationID: String) {
         Task {
+            // transform to chatdatamodel
             let chats = ChatReponsesTransformer.chatDataModelFromOpenAIResponses(responses, conversationID: conversationID)
+            // save to cache
             await cache.addChatsToConversation(chats, conversationID: conversationID)
+            // create action for state to publish
             let setChatResponse = SetChatResponse(conversationID: conversationID, chats: chats, error: nil)
             dispatch(setChatResponse)
+            // refresh the conversationList
+            // TODO: only do this for new conversations
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
             Task {@MainActor in
+                // Make sure to
                 chats.forEach { data in
                     let model = ChatMessageModel(id: data.id, conversationID: conversationID, text: data.text, date: data.date, role: data.type, responseId: data.responseId)
                     modelContext.insert(model)
