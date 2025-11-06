@@ -14,27 +14,36 @@ struct ChatContainerView: View {
     @StateObject var viewModel: ChatContainerViewModel
     @State private var text: String = ""
     var body: some View {
-        VStack {
-            Spacer()
-            ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore, conversationDataModel: viewModel.conversationDataModel)
-                .edgesIgnoringSafeArea(.all)
-            HStack(spacing: 5) {
-                TextField("Enter your prompt here", text: $text)
-                Image(systemName: "arrow.up.circle.fill")
-                    .resizable()
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.blue)
-                    .onTapGesture {
-                        guard !text.isEmpty else {return}
-                        self.viewModel.addText(text)
-                        text = ""
-                    }
+        NavigationStack {
+            VStack {
+                Spacer()
+                ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore, conversationDataModel: viewModel.conversationDataModel)
+                    .edgesIgnoringSafeArea(.all)
+                HStack(spacing: 5) {
+                    TextField("Enter your prompt here", text: $text)
+                    Image(systemName: "arrow.up.circle.fill")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.blue)
+                        .onTapGesture {
+                            guard !text.isEmpty else {return}
+                            self.viewModel.addText(text)
+                            text = ""
+                        }
+                }
+                .padding(10)
+                .cornerRadius(10)
+                .border(Color.secondary, width: 0.5)
             }
-            .padding(10)
-            .cornerRadius(10)
-            .border(Color.secondary, width: 0.5)
+            .padding()
+        }.toolbar {
+            ToolbarItem(id: "New", placement: .topBarTrailing) {
+//                NavigationLink(destination: ) {
+                    Text("model")
+//                }
+            }
         }
-        .padding()
+        
     }
 }
 

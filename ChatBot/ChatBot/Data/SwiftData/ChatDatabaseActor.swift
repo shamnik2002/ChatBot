@@ -47,6 +47,7 @@ actor ChatDatabaseActor {
     func deleteConversations(_ conversations: [ConversationDataModel]) {
         conversations.forEach { item in
             
+            // Predicate sometimes can't handle keypath so read them in vars here
             let convoId = item.id
             let convoDescriptor = FetchDescriptor<ConversationModel>(
                 predicate: #Predicate{$0.id == convoId}
@@ -95,7 +96,8 @@ actor ChatDatabaseActor {
         }
     }
     
-    func getLastAssisstantResponseIdFor(conversationID: String) -> String? {
+    func getLastAssisstantResponseFor(conversationID: String) -> ChatMessageModel? {
+        // Predicate sometimes can't handle keypath so read them in vars here
         let role = ChatResponseRole.assistant.rawValue
         // predicate to fetch last response we got from OpenAI to grab the response_id
         // responseId is used to tell OpenAI the context of the conversation
@@ -105,17 +107,16 @@ actor ChatDatabaseActor {
             sortBy: [SortDescriptor(\.date)]
         )
         chatFetchDescriptor.fetchLimit = 1
-        var responseId: String?
         do {
             let chats = try modelContext.fetch(chatFetchDescriptor)
-            responseId = chats.first?.responseId
+            return chats.first
             
         }catch {
             // TODO: propagate the error back to app or log errors
             // this error is from swiftdata if we fail to fetch data
             print(error)
         }
-        return responseId
+        return nil
     }
     
     func addChats(_ chats:[ChatDataModel], for conversationID: String) {
@@ -137,7 +138,7 @@ actor ChatDatabaseActor {
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
         if let chats = try? modelContext.fetch(descriptor), !chats.isEmpty {
-            chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: ChatResponseRole(rawValue: $0.role) ?? .assistant)}
+            chatDataModels = chats.map{ChatDataModel(id: $0.id, conversationID: conversationID, text: $0.text, date: $0.date, type: ChatResponseRole(rawValue: $0.role) ?? .assistant, modelId: $0.modelId, modelProviderId: $0.modelProviderId)}
         }
         return chatDataModels
     }

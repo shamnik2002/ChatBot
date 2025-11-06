@@ -21,6 +21,7 @@ struct GetChatResponse: GetChat {
     let input: String
     let conversationID: String
     var retryAttempt: Int
+    var model: ProviderModelProtocol = OpenAIProvider().model(.gpt_5_mini)
 }
 
 // Fetch old chats from store for now (eventually plan to fetch it from cloukit perhaps)

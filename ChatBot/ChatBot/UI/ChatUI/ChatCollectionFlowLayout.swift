@@ -88,12 +88,20 @@ final class ChatCollectionFlowLayout : UICollectionViewFlowLayout {
                 .kern: 1.2
             ]
         )
+        let attributedTextModelName = NSAttributedString(
+            string: chatDataModel.modelId,
+            attributes: [
+                .font: UIFont.preferredFont(forTextStyle:.footnote),
+                .foregroundColor: UIColor.systemBlue,
+                .kern: 1.2
+            ]
+        )
         let topBottomPadding = ChatMessageView.Constants.topPadding + ChatMessageView.Constants.bottomPadding
         let leftPadding = chatDataModel.type == .user ? Constants.userChatLeftPadding : Constants.leftPadding
         let xOffset: CGFloat = leftPadding
         let width = collectionView.bounds.width - leftPadding - Constants.rightPadding
 
-        let height = attributedText.height(constrainedToWidth: collectionView.frame.width) + topBottomPadding
+        let height = attributedText.height(constrainedToWidth: collectionView.frame.width) + topBottomPadding + attributedTextModelName.height(constrainedToWidth: collectionView.frame.width)
         let attributes = UICollectionViewLayoutAttributes(forCellWith: IndexPath(row: row, section: 0))
         attributes.frame = CGRect(x: xOffset, y: yOffset, width: width, height: height)
         return attributes

@@ -9,6 +9,7 @@ import Combine
 
 protocol ParseProtocol {
     func parse<T: Codable>(data: Data, type: T.Type) -> AnyPublisher<T, Error>
+    func parse<T: Codable>(data: Data, type: T.Type) throws -> T
 }
 
 struct Parser: ParseProtocol {
@@ -24,5 +25,15 @@ struct Parser: ParseProtocol {
                     throw error
                 }
             }.eraseToAnyPublisher()
+    }
+    
+    func parse<T: Codable>(data: Data, type: T.Type) throws -> T {
+        do {
+            let result = try JSONDecoder().decode(T.self, from: data)
+            return result
+        } catch {
+            // log error
+            throw error
+        }
     }
 }

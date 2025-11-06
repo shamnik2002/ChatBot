@@ -35,14 +35,18 @@ final class ChatMessageModel {
     var date: TimeInterval
     var role: String // currently handling assisstant or user
     var responseId: String? // OpenAI responses API responseID to provide context in future requests
+    var modelId: String
+    var modelProviderId: String
     
-    init(id: String, conversationID: String, text: String, date: TimeInterval, role: ChatResponseRole, responseId: String? = nil) {
+    init(id: String, conversationID: String, text: String, date: TimeInterval, role: ChatResponseRole, responseId: String? = nil, modelId: String = OpenAIProvider.OpenAIModels.gpt_5_nano.rawValue, modelProviderId: String = OpenAIProvider.id) {
         self.id = id
         self.conversationID = conversationID
         self.text = text
         self.date = date
         self.role = role.rawValue
         self.responseId = responseId
+        self.modelId = modelId
+        self.modelProviderId = modelProviderId
     }
 }
 
@@ -57,13 +61,15 @@ final class UsageModel {
     var inputTokens: Int
     var outputTokens: Int
     var date: TimeInterval
+    var duration: Int
     
-    init(id: String, conversationID: String, chatMessageID: String, inputTokens: Int, outputTokens: Int, date: TimeInterval) {
+    init(id: String, conversationID: String, chatMessageID: String, inputTokens: Int, outputTokens: Int, date: TimeInterval, duration: Int) {
         self.id = id
         self.conversationID = conversationID
         self.chatMessageID = chatMessageID
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
         self.date = date
+        self.duration = duration
     }
 }

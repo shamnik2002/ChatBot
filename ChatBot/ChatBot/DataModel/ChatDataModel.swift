@@ -36,12 +36,17 @@ nonisolated final class ChatDataModel: ChatCollectionViewDataItem, @unchecked Se
     let type: ChatResponseRole
     let conversationID: String
     let responseId: String?
-    init(id: String, conversationID: String, text: String, date: TimeInterval, type: ChatResponseRole, responseId: String? = nil) {
+    var modelId: String
+    var modelProviderId: String
+    
+    init(id: String, conversationID: String, text: String, date: TimeInterval, type: ChatResponseRole, responseId: String? = nil, modelId: String, modelProviderId: String) {
         self.text = text
         self.date = date
         self.type = type
         self.conversationID = conversationID
         self.responseId = responseId
+        self.modelId = modelId
+        self.modelProviderId = modelProviderId
         super.init(id: id)
     }
     
@@ -124,21 +129,4 @@ nonisolated final class ConversationDataModel: Codable, Identifiable, Hashable {
     }
 }
 
-/// ChatReponsesTransformer
-/// Transforms OpenAI response into ChatDataModel
-struct ChatReponsesTransformer {
-        
-    static func chatDataModelFromOpenAIResponses(_ chatResponses: OpenAIResponse, conversationID: String) -> [ChatDataModel] {
-        var chats = [ChatDataModel]()
-        let output = chatResponses.output.filter{$0.type == "message"}.first
-        let responseId = chatResponses.id
-        guard let output else {return []}
-        guard let content = output.content?.first else {return []}
-        let outputRole = output.role ?? "assistant"
-        let role = ChatResponseRole(rawValue: outputRole) ?? .assistant
-        let chat = ChatDataModel(id: output.id, conversationID: conversationID , text: content.text, date: Date().timeIntervalSince1970, type: role, responseId: responseId)
-        chats.append(chat)
-        
-        return chats
-    }
-}
+

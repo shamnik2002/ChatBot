@@ -26,14 +26,20 @@ struct ChatMessageView: View {
             if viewModel.chatDataModel.type == .user {
                 Spacer()
             }
-            Text(viewModel.chatDataModel.text)
-                .font(.headline)
-                .foregroundColor(viewModel.textColor)
-                .padding(10)
-                .background(viewModel.backgroundColor)
-                .cornerRadius(10)
-
-
+            VStack(alignment: .trailing) {
+                Text(viewModel.chatDataModel.text)
+                    .font(.headline)
+                    .foregroundColor(viewModel.textColor)
+                    
+                if viewModel.chatDataModel.type == .assistant {
+                    Text(viewModel.chatDataModel.modelId)
+                        
+                        .font(.footnote)
+                        .foregroundColor(viewModel.textColor)
+                }
+            }.padding(10)
+             .background(viewModel.backgroundColor)
+             .cornerRadius(10)
         }
         .frame(maxWidth: .infinity)   // makes HStack expand horizontally
     }

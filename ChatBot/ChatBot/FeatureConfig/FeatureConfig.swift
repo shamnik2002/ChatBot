@@ -7,5 +7,5 @@
 
 struct FeatureConfig {
     
-    var enableOpenAIResponsesAPI = false
+    var enableOpenAIResponsesAPI = true
 }

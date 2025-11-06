@@ -47,9 +47,9 @@ struct ResponsesRequest: RequestProtocol {
     }
     
     /// Accepts input text and previous responseId
-    init(input: String, responseId: String?) {
+    init(input: String, responseId: String?, model: String) {
         //TODO: add some validation here, perhaps accept model
-        var params = [OpenAIContants.modelKey: OpenAIContants.model, OpenAIContants.inputKey: input]
+        var params = [OpenAIContants.modelKey: model, OpenAIContants.inputKey: input]
         if let responseId {
             params[OpenAIContants.previousResponseIdKey] = responseId
         }

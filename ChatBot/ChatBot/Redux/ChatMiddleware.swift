@@ -35,6 +35,7 @@ final class ChatMiddleware {
     private let featureConfig: FeatureConfig
     private let chatDatabase: ChatDatabaseActor
     private let maxRetryAttempts = 3
+    private let serviceProvider: ServiceProvider
     
     init(dispatch: @escaping Dispatch,
          networkService: NetworkProtocol,
@@ -50,7 +51,7 @@ final class ChatMiddleware {
         self.cache = cache
         self.featureConfig = featureConfig
         self.chatDatabase = chatDatabase
-        
+        self.serviceProvider = ServiceProvider(networkService: networkService, parser: parser)
         // Listen to any Get chat actions dispatcher sends
         listner.sink {[weak self] action in
             guard let action = action else { return }
@@ -64,7 +65,7 @@ final class ChatMiddleware {
             // Check if we are retying the request
             if action.retryAttempt <= 0 {
                 // we do not want to add user's input chat message again when retrying
-                addUserMessage(input: action.input, conversationID: action.conversationID)
+                addUserMessage(input: action.input, conversationID: action.conversationID, model: action.model)
             }
             // if feature flag to use OpenAI API is enabled and we have a API key then fetch from remote
             if featureConfig.enableOpenAIResponsesAPI && !OpenAIContants.API_Secret.isEmpty {
@@ -85,25 +86,21 @@ final class ChatMiddleware {
     /// Fetch responses from OpenAI
     private func fetchResponses(action: GetChatResponse) {
         Task {
-            let responseId = await chatDatabase.getLastAssisstantResponseIdFor(conversationID: action.conversationID)
             // Create the request and parser
-            let request = ResponsesRequest(input: action.input, responseId: responseId)
-            let parser = parser
-            networkService.fetchDataWithPublisher(request: request)
-                .flatMap { data in
-                    return parser.parse(data: data, type: OpenAIResponse.self)
-                }.sink {[weak self] completion in
-                    switch completion {
-                        // process errors
-                        case .failure(let error):
-                            self?.processChatError(error, originalAction: action)
-                        default:
-                            break
-                        }
-                } receiveValue: {[weak self] result in
-                    // process valid response
-                    self?.processChatResponses(result, conversationID: action.conversationID)
-                }.store(in: &cancellables)
+            guard let serviceProvider = serviceProvider.provider(id: action.model.modelProviderId) else {
+                //TODO: throw an error here
+                return
+            }
+            var chatDataModel: ChatDataModel?
+            if let assisstantChat = await chatDatabase.getLastAssisstantResponseFor(conversationID: action.conversationID) {
+                chatDataModel = ChatDataModel(id: assisstantChat.id, conversationID: assisstantChat.conversationID, text: assisstantChat.text, date: assisstantChat.date, type: ChatResponseRole(rawValue: assisstantChat.role) ?? .assistant, responseId: assisstantChat.responseId, modelId: assisstantChat.modelId, modelProviderId: assisstantChat.modelProviderId)
+            }
+            do {
+                let result = try await serviceProvider.fetchResponse(action: action, lastAssisstantChat: chatDataModel)
+                self.processChatResponses(result, conversationID: action.conversationID)
+            }catch {
+                self.processChatError(error, originalAction: action)
+            }            
         }
     }
     
@@ -137,10 +134,8 @@ final class ChatMiddleware {
     
     /// processChatResponses
     ///  Processes the response and adds it to cache/store
-    private func processChatResponses(_ responses: OpenAIResponse, conversationID: String) {
+    private func processChatResponses(_ chats: [ChatDataModel], conversationID: String) {
         Task {
-            // transform to chatdatamodel
-            let chats = ChatReponsesTransformer.chatDataModelFromOpenAIResponses(responses, conversationID: conversationID)
             // save to cache
             await cache.addChatsToConversation(chats, conversationID: conversationID)
             // create action for state to publish
@@ -156,13 +151,13 @@ final class ChatMiddleware {
     
     /// addUserMessage
     /// Handles properly saving the user input in cache/store
-    private func addUserMessage(input: String, conversationID: String) {
+    private func addUserMessage(input: String, conversationID: String, model: ProviderModelProtocol) {
         Task {
             
             let date = Date()
             let timeInterval = ceil(date.timeIntervalSince1970)
             let uuid = UUID().uuidString
-            let userChat = ChatDataModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, type: ChatResponseRole.user)
+            let userChat = ChatDataModel(id: uuid, conversationID: conversationID, text: input, date: timeInterval, type: ChatResponseRole.user, modelId: model.id, modelProviderId: model.modelProviderId)
             // add the chat to cache to correct conversation
             await cache.addChatsToConversation([userChat], conversationID: conversationID)
             // if this was newly created convo then update the conversation title to reflect the chat message
@@ -204,7 +199,7 @@ final class ChatMiddleware {
     
     /// fetchMockResponses
     /// Convenience method to work with mock data instead of using up your tokens
-    private func fetchMockResponses(conversationID: String) {
+    private func fetchMockResponses(conversationID: String, model: ProviderModelProtocol) {
         
         Task {[weak self] in
             let oldChatsText = randomStringGenerator(count: 20)
@@ -212,7 +207,7 @@ final class ChatMiddleware {
             var delta:TimeInterval = 60*2
             for text in oldChatsText {
                 let date = mockDate.timeIntervalSince1970 - delta
-                chats.append(ChatDataModel(id: UUID().uuidString, conversationID: conversationID, text: text, date: date, type: .assistant))
+                chats.append(ChatDataModel(id: UUID().uuidString, conversationID: conversationID, text: text, date: date, type: .assistant, modelId: model.id, modelProviderId: model.modelProviderId))
                 delta -= 60*2
             }
             let setResponsesAction = SetChats(conversationID: conversationID, chats: chats, error: nil)
@@ -229,7 +224,7 @@ final class ChatMiddleware {
         Task {[weak self] in
             try? await Task.sleep(for: .seconds(4))
             guard let chatBotresponse = randomStringGenerator(count: 1).first else {return}
-            let chat = ChatDataModel(id: UUID().uuidString, conversationID: action.conversationID, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant)
+            let chat = ChatDataModel(id: UUID().uuidString, conversationID: action.conversationID, text: chatBotresponse, date: Date().timeIntervalSince1970, type: .assistant, modelId: action.model.id, modelProviderId: action.model.modelProviderId)
             await self?.cache.addChatsToConversation([chat], conversationID: action.conversationID)
             let setResponsesAction = SetChatResponse(conversationID: action.conversationID, chats: [chat], error: nil)
             self?.dispatch(setResponsesAction)

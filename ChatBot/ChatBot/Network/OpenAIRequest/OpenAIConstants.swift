@@ -16,3 +16,4 @@ struct OpenAIContants {
     static let API_Secret  = ""
     static let previousResponseIdKey = "previous_response_id"
 }
+
