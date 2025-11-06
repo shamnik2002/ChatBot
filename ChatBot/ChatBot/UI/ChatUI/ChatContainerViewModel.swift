@@ -11,6 +11,8 @@ import Combine
 final class ChatContainerViewModel: ObservableObject {
     private(set) var appStore: AppStore
     var conversationDataModel: ConversationDataModel
+    @Published var currentModel: any ProviderModelProtocol = OpenAIProvider.model(.gpt_5_nano)
+    
     init(appStore: AppStore, conversationDataModel: ConversationDataModel) {
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
@@ -19,7 +21,7 @@ final class ChatContainerViewModel: ObservableObject {
     ///fetchResponse
     /// Creates and dispatcher the action to fetch response via OpenAi API
     private func fetchResponse(input: String) {
-        let getResponses = GetChatResponse(input: input, conversationID: conversationDataModel.id, retryAttempt: 0)
+        let getResponses = GetChatResponse(input: input, conversationID: conversationDataModel.id, retryAttempt: 0, model: currentModel)
         self.appStore.dispacther.dispatch(getResponses)
     }
     
@@ -27,5 +29,9 @@ final class ChatContainerViewModel: ObservableObject {
     /// Triggered when user submits the text
     func addText(_ text: String) {
         fetchResponse(input: text)
+    }
+    
+    func models() -> [any ProviderModelProtocol] {
+        OpenAIProvider.models()
     }
 }

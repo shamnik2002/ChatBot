@@ -13,9 +13,10 @@ import Combine
 struct ChatContainerView: View {
     @StateObject var viewModel: ChatContainerViewModel
     @State private var text: String = ""
+    @State private var isShowingSheet = false
     var body: some View {
-        NavigationStack {
-            VStack {
+
+        VStack {
                 Spacer()
                 ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore, conversationDataModel: viewModel.conversationDataModel)
                     .edgesIgnoringSafeArea(.all)
@@ -36,13 +37,34 @@ struct ChatContainerView: View {
                 .border(Color.secondary, width: 0.5)
             }
             .padding()
-        }.toolbar {
-            ToolbarItem(id: "New", placement: .topBarTrailing) {
-//                NavigationLink(destination: ) {
-                    Text("model")
-//                }
+            .toolbar {
+                ToolbarItem(id: "New", placement: .topBarTrailing) {
+                    Button{
+                        isShowingSheet = true
+                    }label: {
+                        Text("Switch Model")
+                    }
+                    
+                }
             }
-        }
+            .sheet(isPresented: $isShowingSheet) {
+                List {
+                    ForEach(viewModel.models(), id: \.hashValue) { item in
+                        Button{
+                            isShowingSheet = false
+                            viewModel.currentModel = item
+                        }label: {
+                            HStack {
+                                Text(item.name)
+                                if item.hashValue == viewModel.currentModel.hashValue {
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                }.presentationDetents([.fraction(0.6)])
+            }
         
     }
 }

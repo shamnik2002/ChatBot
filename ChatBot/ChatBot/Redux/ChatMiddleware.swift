@@ -151,7 +151,7 @@ final class ChatMiddleware {
     
     /// addUserMessage
     /// Handles properly saving the user input in cache/store
-    private func addUserMessage(input: String, conversationID: String, model: ProviderModelProtocol) {
+    private func addUserMessage(input: String, conversationID: String, model: any ProviderModelProtocol) {
         Task {
             
             let date = Date()
@@ -199,7 +199,7 @@ final class ChatMiddleware {
     
     /// fetchMockResponses
     /// Convenience method to work with mock data instead of using up your tokens
-    private func fetchMockResponses(conversationID: String, model: ProviderModelProtocol) {
+    private func fetchMockResponses(conversationID: String, model: any ProviderModelProtocol) {
         
         Task {[weak self] in
             let oldChatsText = randomStringGenerator(count: 20)
