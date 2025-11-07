@@ -48,22 +48,8 @@ struct ChatContainerView: View {
                 }
             }
             .sheet(isPresented: $isShowingSheet) {
-                List {
-                    ForEach(viewModel.models(), id: \.hashValue) { item in
-                        Button{
-                            isShowingSheet = false
-                            viewModel.currentModel = item
-                        }label: {
-                            HStack {
-                                Text(item.name)
-                                if item.hashValue == viewModel.currentModel.hashValue {
-                                    Spacer()
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                }.presentationDetents([.fraction(0.6)])
+                AIModelsListView(viewModel: AIModelsListViewModel(appStore: viewModel.appStore))
+                .presentationDetents([.fraction(0.6)])
             }
         
     }

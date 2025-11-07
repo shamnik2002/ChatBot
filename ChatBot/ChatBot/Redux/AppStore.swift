@@ -32,6 +32,12 @@ final class AppStore {
     let modelContainer: ModelContainer
     // Actor for database ops
     let chatDatabase: ChatDatabaseActor
+    // Actor for Settings Store
+    let settingsStore: SettingsStore
+    // Handle Publishing settings update to UI
+    let settingsState: SettingsState
+    // Handle fetching settings from store
+    let settingsMiddleware: SettingsMiddleware
     
     init(modelContainer: ModelContainer) {
         self.dispacther = Dispatcher()
@@ -45,6 +51,10 @@ final class AppStore {
         
         self.conversationState = ConversationState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$conversationUpdateAction.eraseToAnyPublisher())
         self.conversationMiddleware = ConversationMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, chatDataBase: self.chatDatabase, listner: self.dispacther.$conversationAction.eraseToAnyPublisher())
+        
+        self.settingsStore = SettingsStore()
+        self.settingsState = SettingsState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$settingsMutatingAction.eraseToAnyPublisher())
+        self.settingsMiddleware = SettingsMiddleware(dispatch: self.dispacther.dispatch(_:), store: self.settingsStore, listner: self.dispacther.$settingsAction.eraseToAnyPublisher())
     }
 }
 

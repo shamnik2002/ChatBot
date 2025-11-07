@@ -86,7 +86,7 @@ import Foundation
 struct OpenAIResponse: Codable {
     let id: String
     let created_at: TimeInterval
-    let output: [Output]
+    let output: [Output]    
     // TODO: handle API errors
 //    let error: ResponseError
 //    struct ResponseError: Codable {

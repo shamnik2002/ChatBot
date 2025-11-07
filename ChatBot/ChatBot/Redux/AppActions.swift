@@ -21,7 +21,7 @@ struct GetChatResponse: GetChat {
     let input: String
     let conversationID: String
     var retryAttempt: Int
-    var model: any ProviderModelProtocol = OpenAIProvider.model(.gpt_5_mini)
+    var model: ProviderModel = OpenAIProvider.model(.gpt_5_mini)
 }
 
 // Fetch old chats from store for now (eventually plan to fetch it from cloukit perhaps)
@@ -89,4 +89,23 @@ struct EditConversation: ConversationAction {
     let conversation: ConversationDataModel
 }
 
+
+//MARK: Settings action
+protocol SettingsAction: ReduxAction{}
+protocol SettingsMutatingAction: ReduxMutatingAction{}
+
+struct GetSettingsObject: SettingsAction {
+    let key: String
+}
+
+struct UpdateSettingsObject: SettingsAction {
+    let key: String
+    let value: Codable
+}
+
+struct SetSettingsObject: SettingsMutatingAction {
+    let key: String
+    let value: Codable?
+    let error: Error?
+}
 

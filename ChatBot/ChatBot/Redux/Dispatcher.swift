@@ -16,6 +16,8 @@ final class Dispatcher {
     @Published var setChat: SetChat?
     @Published var conversationAction: ConversationAction?
     @Published var conversationUpdateAction: ConversationUpdateAction?
+    @Published var settingsAction: SettingsAction?
+    @Published var settingsMutatingAction: SettingsMutatingAction?
     
     func dispatch(_ action: ReduxAction) {
         switch action {
@@ -27,6 +29,10 @@ final class Dispatcher {
                 self.conversationAction = action
             case let action as ConversationUpdateAction:
                 self.conversationUpdateAction = action
+            case let action as SettingsAction:
+                self.settingsAction = action
+            case let action as SettingsMutatingAction:
+                self.settingsMutatingAction = action
             default:
                 break
         }
