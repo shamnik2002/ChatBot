@@ -14,6 +14,6 @@ struct ChatBotApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView(viewModel: MainTabViewModel())
-        }.modelContainer(for: [ConversationModel.self, ChatMessageModel.self])
+        }.modelContainer(for: [ConversationModel.self, ChatMessageModel.self, UsageModel.self])
     }
 }

@@ -146,6 +146,7 @@ final class ChatMiddleware {
             let getConversationList = GetConversationList()
             dispatch(getConversationList)
             await chatDatabase.addChats(chats, for: conversationID)
+            await chatDatabase.addUsageData(usageData)
         }
     }
     

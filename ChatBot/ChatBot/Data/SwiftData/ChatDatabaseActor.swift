@@ -179,10 +179,14 @@ actor ChatDatabaseActor {
         return usageData
     }
     
-    func getUsageDataForDate(_ date: TimeInterval) -> [UsageDataModel] {
+    func getUsageDataForDate(_ date: TimeInterval) async -> [UsageDataModel] {
         var usageData = [UsageDataModel]()
+        let startDate = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: date))
+        let startTimeInterval = startDate.timeIntervalSince1970
+        let endDate = await startDate.dayAfter
+        let endTimeInterval = endDate.timeIntervalSince1970
         let descriptor = FetchDescriptor<UsageModel>(
-            predicate: #Predicate{$0.date == date},
+            predicate: #Predicate{startTimeInterval <= $0.date && $0.date < endTimeInterval},
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
         if let data = try? modelContext.fetch(descriptor) {

@@ -58,7 +58,6 @@ struct ChatContainerView: View {
             })
             .sheet(item: $viewModel.chartsViewModel, content: { item in
                 ChartsView(viewModel: item)
-                .presentationDetents([.fraction(0.8)])
             })
     }
 }

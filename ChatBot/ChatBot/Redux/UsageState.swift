@@ -10,7 +10,7 @@ import Foundation
 
 final class UsageState {
     private let dispatch: Dispatch
-    private let usagePublisher = PassthroughSubject<(UsageAction,[UsageDataModel]), Never>()
+    let usagePublisher = PassthroughSubject<(UsageAction,[UsageDataModel]), Never>()
     private var cancellable = Set<AnyCancellable>()
     init(dispatch:@escaping Dispatch, listener: AnyPublisher<UsageMutatingAction?, Never>) {
         self.dispatch = dispatch

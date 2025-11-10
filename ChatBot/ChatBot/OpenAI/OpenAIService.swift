@@ -65,6 +65,10 @@ struct UsageTransformer {
         guard let usageData = chatResponses.usage else {
             return []
         }
-        return [UsageDataModel(id: UUID().uuidString, conversationID: conversationID, chatMessageID: chatResponses.id, modelId: modelId, modelProviderId: modelProviderId, inputTokens: usageData.input_tokens ?? 0, outputTokens: usageData.output_tokens ?? 0, date: date, duration: duration)]
+        let output = chatResponses.output.filter{$0.type == "message"}.first
+        guard let output else {
+            return []
+        }
+        return [UsageDataModel(id: UUID().uuidString, conversationID: conversationID, chatMessageID: output.id, modelId: modelId, modelProviderId: modelProviderId, inputTokens: usageData.input_tokens ?? 0, outputTokens: usageData.output_tokens ?? 0, date: date, duration: duration)]
     }
 }
