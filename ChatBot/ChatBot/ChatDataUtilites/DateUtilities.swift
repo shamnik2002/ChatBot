@@ -42,4 +42,11 @@ extension Date {
         }
         return "today"
     }
+    
+    func shortByHour() -> String {
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: self)
+        let currentDate = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: Date())
+        
+        return "\(currentDate.hour ?? 0)"
+    }
 }
