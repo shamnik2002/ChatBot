@@ -7,7 +7,7 @@
 import SwiftUI
 import Combine
 
-final class AIModelsListViewModel: ObservableObject {
+final class AIModelsListViewModel: ObservableObject, Identifiable {
         
     @Published var currentModel: ProviderModel?
     private var appStore: AppStore

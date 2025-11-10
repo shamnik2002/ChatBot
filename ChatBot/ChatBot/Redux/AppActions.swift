@@ -109,3 +109,27 @@ struct SetSettingsObject: SettingsMutatingAction {
     let error: Error?
 }
 
+
+//MARK: Usage actions
+protocol UsageAction: ReduxAction{}
+protocol UsageMutatingAction: ReduxMutatingAction{}
+
+struct GetUsageByChat: UsageAction {
+    let chatMessageId: String
+    let conversationId: String
+}
+
+struct GetUsageByConversation: UsageAction {
+    let conversationId: String
+}
+
+struct GetUsageByDate: UsageAction {
+    let date: TimeInterval
+}
+
+struct SetUsage: UsageMutatingAction {
+    let usageData: [UsageDataModel]
+    let originalAction: UsageAction
+}
+
+

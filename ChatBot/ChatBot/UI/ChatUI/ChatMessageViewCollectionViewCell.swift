@@ -29,7 +29,7 @@ final class ChatMessageViewCollectionViewCell: UICollectionViewCell {
     
     func setup(chat: ChatDataModel, action:(()->Void)? = nil) {
         
-        let viewModel = ChatMessageViewModel(chatDataModel: chat)
+        let viewModel = ChatMessageViewModel(chatDataModel: chat, action: action)
         guard hostingController == nil else {
             hostingController?.rootView.viewModel = viewModel
             return

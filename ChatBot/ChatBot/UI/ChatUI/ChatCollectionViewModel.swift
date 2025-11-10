@@ -12,11 +12,16 @@ protocol ChatCollectionViewModelProtocol {
     func fetchChats()
     var chatsPublisher: AnyPublisher<([ChatCollectionViewDataItem], ChatsUpdateType), Never> {get}
     func retryAction(_ action: GetChat)
+    func showCharts(item: ChatDataModel)
 }
 
 enum ChatsUpdateType: String {
     case appended
     case inserted
+}
+
+enum ChatCollectionViewEventHandler {
+    case showCharts(ChatDataModel)
 }
 
 final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, ObservableObject {
@@ -37,10 +42,12 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
     // Note other non-retryable errors can be multiple if needed
     private var retryableErrorMessage = ChatSystemMessageDataModel(id: UUID().uuidString, texts: ["Oops something went wrong"], type: .retryableError, retryableAction: nil)
 
-    init(appStore: AppStore, conversationDataModel: ConversationDataModel, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>) {
+    private var eventHandler: ((ChatCollectionViewEventHandler) -> Void)?
+    init(appStore: AppStore, conversationDataModel: ConversationDataModel, dataProcessor: any DataProcessor<[ChatDataModel], [ChatCollectionViewDataItem]>, eventHandler: ((ChatCollectionViewEventHandler) -> Void)?) {
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
         self.dataProcessor = dataProcessor
+        self.eventHandler = eventHandler
         // Listen to responses from OpenAI API
         self.appStore.chatState.responsesPublisher.receive(on: RunLoop.main)
             .sink {[weak self] chatResponse in
@@ -186,5 +193,10 @@ final class ChatCollectionViewModel: ChatCollectionViewModelProtocol, Observable
         newAction.retryAttempt += 1
         appStore.dispacther.dispatch(newAction)
     }
+    
+    func showCharts(item: ChatDataModel) {
+        eventHandler?(.showCharts(item))
+    }
+    
 }
 

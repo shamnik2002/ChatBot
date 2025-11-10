@@ -58,15 +58,19 @@ final class UsageModel {
     @Attribute(.unique) var id: String
     var conversationID: String
     var chatMessageID: String
+    var modelId: String
+    var modelProviderId: String
     var inputTokens: Int
     var outputTokens: Int
     var date: TimeInterval
-    var duration: Int
+    var duration: Double
     
-    init(id: String, conversationID: String, chatMessageID: String, inputTokens: Int, outputTokens: Int, date: TimeInterval, duration: Int) {
+    init(id: String, conversationID: String, chatMessageID: String, modelId: String, modelProviderId: String, inputTokens: Int, outputTokens: Int, date: TimeInterval, duration: Double) {
         self.id = id
         self.conversationID = conversationID
         self.chatMessageID = chatMessageID
+        self.modelId = modelId
+        self.modelProviderId = modelProviderId
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
         self.date = date

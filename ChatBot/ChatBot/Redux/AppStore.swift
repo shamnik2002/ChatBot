@@ -38,7 +38,11 @@ final class AppStore {
     let settingsState: SettingsState
     // Handle fetching settings from store
     let settingsMiddleware: SettingsMiddleware
-    
+    // Handle Publishing usage update to UI
+    let usageState: UsageState
+    // Handle fetching usage from store
+    let usageMiddleware: UsageMiddleware
+        
     init(modelContainer: ModelContainer) {
         self.dispacther = Dispatcher()
         self.cache = CBCache()
@@ -55,6 +59,9 @@ final class AppStore {
         self.settingsStore = SettingsStore()
         self.settingsState = SettingsState(dispatch: self.dispacther.dispatch(_:), listner: self.dispacther.$settingsMutatingAction.eraseToAnyPublisher())
         self.settingsMiddleware = SettingsMiddleware(dispatch: self.dispacther.dispatch(_:), store: self.settingsStore, listner: self.dispacther.$settingsAction.eraseToAnyPublisher())
+                
+        self.usageState = UsageState(dispatch: self.dispacther.dispatch(_:), listener: self.dispacther.$usageMutatingAction.eraseToAnyPublisher())
+        self.usageMiddleware = UsageMiddleware(dispatch: self.dispacther.dispatch(_:), cache: self.cache, dataStore: self.chatDatabase, listener: self.dispacther.$usageAction.eraseToAnyPublisher())
     }
 }
 

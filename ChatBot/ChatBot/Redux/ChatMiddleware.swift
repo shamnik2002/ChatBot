@@ -97,7 +97,7 @@ final class ChatMiddleware {
             }
             do {
                 let result = try await serviceProvider.fetchResponse(action: action, lastAssisstantChat: chatDataModel)
-                self.processChatResponses(result, conversationID: action.conversationID)
+                self.processChatResponses(result.0, usageData: result.1, conversationID: action.conversationID)
             }catch {
                 self.processChatError(error, originalAction: action)
             }            
@@ -134,7 +134,7 @@ final class ChatMiddleware {
     
     /// processChatResponses
     ///  Processes the response and adds it to cache/store
-    private func processChatResponses(_ chats: [ChatDataModel], conversationID: String) {
+    private func processChatResponses(_ chats: [ChatDataModel], usageData: [UsageDataModel], conversationID: String) {
         Task {
             // save to cache
             await cache.addChatsToConversation(chats, conversationID: conversationID)

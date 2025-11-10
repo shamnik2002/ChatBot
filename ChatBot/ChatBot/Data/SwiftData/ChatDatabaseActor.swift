@@ -142,4 +142,52 @@ actor ChatDatabaseActor {
         }
         return chatDataModels
     }
+    
+    func addUsageData(_ usageData: [UsageDataModel]){
+        usageData.forEach { data in
+            let model = UsageModel(id: data.id, conversationID: data.conversationID, chatMessageID: data.chatMessageID, modelId: data.modelId, modelProviderId: data.modelProviderId, inputTokens: data.inputTokens, outputTokens: data.outputTokens, date: data.date, duration: data.duration)
+            modelContext.insert(model)
+        }
+        do {
+            try modelContext.save()
+        }catch {
+            print(error.localizedDescription)
+        }
+    }
+    
+    func getUsageData(chatMessageId: String, conversationId: String) -> UsageDataModel? {
+        var usageData: UsageDataModel?
+        let descriptor = FetchDescriptor<UsageModel>(
+            predicate: #Predicate{$0.conversationID == conversationId && $0.chatMessageID == chatMessageId},
+            sortBy: [SortDescriptor(\.date, order: .forward)]
+        )
+        if let data = try? modelContext.fetch(descriptor).first {
+            usageData = UsageDataModel(id: data.id, conversationID: data.conversationID, chatMessageID: data.chatMessageID, modelId: data.modelId, modelProviderId: data.modelProviderId, inputTokens: data.inputTokens, outputTokens: data.outputTokens, date: data.date, duration: data.duration)
+        }
+        return usageData
+    }
+    
+    func getUsageDataForConversation(_ conversationID: String) -> [UsageDataModel] {
+        var usageData = [UsageDataModel]()
+        let descriptor = FetchDescriptor<UsageModel>(
+            predicate: #Predicate{$0.conversationID == conversationID},
+            sortBy: [SortDescriptor(\.date, order: .forward)]
+        )
+        if let data = try? modelContext.fetch(descriptor) {
+            usageData = data.map{UsageDataModel(id: $0.id, conversationID: $0.conversationID, chatMessageID: $0.chatMessageID, modelId: $0.modelId, modelProviderId: $0.modelProviderId, inputTokens: $0.inputTokens, outputTokens: $0.outputTokens, date: $0.date, duration: $0.duration)}
+        }
+        return usageData
+    }
+    
+    func getUsageDataForDate(_ date: TimeInterval) -> [UsageDataModel] {
+        var usageData = [UsageDataModel]()
+        let descriptor = FetchDescriptor<UsageModel>(
+            predicate: #Predicate{$0.date == date},
+            sortBy: [SortDescriptor(\.date, order: .forward)]
+        )
+        if let data = try? modelContext.fetch(descriptor) {
+            usageData = data.map{UsageDataModel(id: $0.id, conversationID: $0.conversationID, chatMessageID: $0.chatMessageID, modelId: $0.modelId, modelProviderId: $0.modelProviderId, inputTokens: $0.inputTokens, outputTokens: $0.outputTokens, date: $0.date, duration: $0.duration)}
+        }
+        return usageData
+    }
 }

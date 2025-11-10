@@ -55,7 +55,10 @@ final class ChatCollectionViewController: UIViewController {
                     guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "chat", for: indexPath) as? ChatMessageViewCollectionViewCell else {
                         return UICollectionViewCell()
                     }
-                    cell.setup(chat: item)
+                    let tapAction: (()->Void) = {[weak self] in
+                        self?.viewModel.showCharts(item: item)
+                    }
+                    cell.setup(chat: item, action: tapAction)
                     return cell
                 case let item as DateDataModel:
                     guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "date", for: indexPath) as? ChatDateViewCollectionViewCell else {

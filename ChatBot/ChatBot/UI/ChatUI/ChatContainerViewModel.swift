@@ -8,12 +8,20 @@
 import Foundation
 import Combine
 
-final class ChatContainerViewModel: ObservableObject {
+protocol ChatContainerCoordinatorProtocol {
+    func showChartsView(data: ChatDataModel)
+    func showAIModelsView()
+}
+
+final class ChatContainerViewModel: ObservableObject, ChatContainerCoordinatorProtocol {
     private(set) var appStore: AppStore
     var conversationDataModel: ConversationDataModel
     var currentModel: ProviderModel = OpenAIProvider.model(.gpt_5_nano)
     private var cancellables = Set<AnyCancellable>()
 
+    @Published var chartsViewModel: ChartsViewModel?
+    @Published var ailModelsListViewModel: AIModelsListViewModel?
+    
     init(appStore: AppStore, conversationDataModel: ConversationDataModel) {
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
@@ -50,5 +58,13 @@ final class ChatContainerViewModel: ObservableObject {
     
     func models() -> [ProviderModel] {
         OpenAIProvider.models()
+    }
+    
+    func showChartsView(data: ChatDataModel) {
+        self.chartsViewModel = ChartsViewModel(appStore: appStore, chatDataModel: data)
+    }
+    
+    func showAIModelsView() {
+        self.ailModelsListViewModel = AIModelsListViewModel(appStore: appStore)
     }
 }

@@ -42,6 +42,11 @@ struct ChatMessageView: View {
              .cornerRadius(10)
         }
         .frame(maxWidth: .infinity)   // makes HStack expand horizontally
+        .onTapGesture {
+            if viewModel.chatDataModel.type == .assistant {
+                viewModel.action?()
+            }
+        }
     }
 }
 
@@ -92,8 +97,11 @@ final class ChatMessageViewModel: ObservableObject {
             return .center
         }
     }
-    init(chatDataModel: ChatDataModel) {
+    
+    private(set) var action: (()-> Void)?
+    init(chatDataModel: ChatDataModel, action: (()-> Void)?) {
         self.chatDataModel = chatDataModel
+        self.action = action
     }
 }
 

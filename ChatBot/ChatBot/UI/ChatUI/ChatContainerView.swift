@@ -13,12 +13,17 @@ import Combine
 struct ChatContainerView: View {
     @StateObject var viewModel: ChatContainerViewModel
     @State private var text: String = ""
-    @State private var isShowingSheet = false
     var body: some View {
 
         VStack {
                 Spacer()
-                ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore, conversationDataModel: viewModel.conversationDataModel)
+                ChatCollectionViewControllerRepresentable(appStore: viewModel.appStore, conversationDataModel: viewModel.conversationDataModel, eventHandler: { type in
+                    
+                    switch type {
+                        case .showCharts(let data):
+                            viewModel.showChartsView(data: data)
+                    }
+                })
                     .edgesIgnoringSafeArea(.all)
                 HStack(spacing: 5) {
                     TextField("Enter your prompt here", text: $text)
@@ -40,18 +45,21 @@ struct ChatContainerView: View {
             .toolbar {
                 ToolbarItem(id: "New", placement: .topBarTrailing) {
                     Button{
-                        isShowingSheet = true
+                        viewModel.showAIModelsView()
                     }label: {
                         Text("Switch Model")
                     }
                     
                 }
             }
-            .sheet(isPresented: $isShowingSheet) {
-                AIModelsListView(viewModel: AIModelsListViewModel(appStore: viewModel.appStore))
+            .sheet(item: $viewModel.ailModelsListViewModel, content: { item in
+                AIModelsListView(viewModel: item)
                 .presentationDetents([.fraction(0.6)])
-            }
-        
+            })
+            .sheet(item: $viewModel.chartsViewModel, content: { item in
+                ChartsView(viewModel: item)
+                .presentationDetents([.fraction(0.8)])
+            })
     }
 }
 
@@ -61,13 +69,15 @@ struct ChatCollectionViewControllerRepresentable: UIViewControllerRepresentable 
     
     private let appStore: AppStore
     private let conversationDataModel: ConversationDataModel
-    init(appStore: AppStore, conversationDataModel: ConversationDataModel) {
+    private let eventHandler: ((ChatCollectionViewEventHandler) -> Void)?
+    init(appStore: AppStore, conversationDataModel: ConversationDataModel, eventHandler: ((ChatCollectionViewEventHandler) -> Void)? = nil) {
         self.appStore = appStore
         self.conversationDataModel = conversationDataModel
+        self.eventHandler = eventHandler
     }
     
     func makeUIViewController(context: Context) -> ChatCollectionViewController {
-        let viewModel = ChatCollectionViewModel(appStore: appStore, conversationDataModel: conversationDataModel, dataProcessor: ChatDataProcessor())
+        let viewModel = ChatCollectionViewModel(appStore: appStore, conversationDataModel: conversationDataModel, dataProcessor: ChatDataProcessor(), eventHandler: eventHandler)
         let vc = ChatCollectionViewController(viewModel: viewModel)
         return vc
     }
