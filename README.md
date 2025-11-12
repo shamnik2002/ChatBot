@@ -15,6 +15,9 @@ If you would rather not, you could still try this app using mock responses.
 📊 2. Usage Metrics Charts Beautiful Swift charts to view input/output token usage by chat, conversation, or date. 
 ![charts](https://github.com/user-attachments/assets/3a0f3946-73cb-4c92-8c21-b1cb9bd4304f)
 
+3. Modular code to switch service provider to allow talking to a provider other than OpenAI in future.
+4. Better caching, introduced simple LRU to manage eviction using capacity.
+
 # Demo
 
 ## Create Conversation
