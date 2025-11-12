@@ -26,13 +26,13 @@ nonisolated final class LRUCache<Key: Hashable, Value: Any> {
     }
     
     func setValue(_ value: Value, key: Key) {
-        if var node = hashMap[key] {
+        if let node = hashMap[key] {
             node.value = value
             linkedList.moveToFront(node: node)
             return
         }
-        var requiresEviction = hashMap.count >= capacity
-        var node = Node(key: key, value: value)
+        let requiresEviction = hashMap.count >= capacity
+        let node = Node(key: key, value: value)
         linkedList.add(node: node)
         hashMap[key] = node
         if requiresEviction {
@@ -40,6 +40,13 @@ nonisolated final class LRUCache<Key: Hashable, Value: Any> {
                 hashMap[node.key] = nil
             }
         }
+    }
+    
+    func removeValueFor(key: Key) {
+        if let node = hashMap[key] {
+            linkedList.remove(node: node)
+            hashMap[node.key] = nil
+        }        
     }
     
     func printHashMap() {
@@ -81,15 +88,18 @@ nonisolated final class LRUCache<Key: Hashable, Value: Any> {
         
         func remove(node: Node) {
             if node === head {
-                var next = head?.next
+                let next = head?.next
                 head = next
                 next?.prev = nil
+                if head == nil {
+                    tail = nil
+                }
             }else if node === tail {
-                var prev = tail?.prev
+                let prev = tail?.prev
                 tail = prev
                 prev?.next = nil
             }else {
-                var prev = node.prev
+                let prev = node.prev
                 prev?.next = node.next
                 node.next?.prev = prev
                 node.prev = nil

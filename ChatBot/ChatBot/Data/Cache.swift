@@ -12,7 +12,7 @@ import Combine
 /// Single Cache that holds both chat and conversation data
 actor CBCache {
     private var conversations: [ConversationDataModel] = []
-    private var chats: [String:[ChatDataModel]] = [:]
+    private var chats = LRUCache<String, [ChatDataModel]>(capacity: 10)
     private var usageTotalsByDate = LRUCache<Date, UsageTotals>(capacity: 10)
     private var usageTotalsByConversation = LRUCache<String, UsageTotals>(capacity: 10)
 
@@ -42,7 +42,7 @@ actor CBCache {
     
     /// Removes the associated chats along with the conversation
     func removeConversation(_ conversation: ConversationDataModel) {
-        chats[conversation.id] = nil
+        chats.removeValueFor(key: conversation.id)
         self.conversations.removeAll { convo in
             convo.id == conversation.id
         }
@@ -56,12 +56,13 @@ actor CBCache {
     }
     
     func addChatsToConversation(_ chats: [ChatDataModel], conversationID: String) {
-        self.chats[conversationID, default: []] += chats
+        let chatsForConvo = self.chats.getValue(conversationID) ?? []
+        self.chats.setValue(chatsForConvo + chats, key: conversationID)
     }
     
     // Returns chats sorted by date in descending order
     func getChats(conversationID: String) -> [ChatDataModel] {
-        guard let chatDataModels = self.chats[conversationID] else {return []}
+        guard let chatDataModels = self.chats.getValue(conversationID) else {return []}
         return chatDataModels.sorted { $0.date < $1.date }
     }
     
@@ -79,5 +80,32 @@ actor CBCache {
     
     func setUsageTotalByDate(_ data: UsageTotals, date: Date) {
         usageTotalsByDate.setValue(data, key: date)
+    }
+    
+    func addUsageTotalByConversation(_ data: [UsageDataModel], conversationID: String) {
+        if let usageForConvo = self.getUsageTotalByConversation(conversationID) {
+            var newInputTotal = usageForConvo.inputTokensTotal
+            var newOutputTotal = usageForConvo.outputTokensTotal
+            for item in data {
+                newInputTotal += item.inputTokens
+                newOutputTotal += item.outputTokens
+            }
+            let newUsageData = UsageTotals(type: usageForConvo.type, inputTokensTotal: newInputTotal, outputTokensTotal: newOutputTotal)
+            setUsageTotalByConversation(newUsageData, conversationID: conversationID)
+        }
+    }
+    
+    func addUsageTotalByDate(_ data: [UsageDataModel], date: Date) {
+        
+        if let usageForConvo = self.getUsageTotalByDate(date) {
+            var newInputTotal = usageForConvo.inputTokensTotal
+            var newOutputTotal = usageForConvo.outputTokensTotal
+            for item in data {
+                newInputTotal += item.inputTokens
+                newOutputTotal += item.outputTokens
+            }
+            let newUsageData = UsageTotals(type: usageForConvo.type, inputTokensTotal: newInputTotal, outputTokensTotal: newOutputTotal)
+            setUsageTotalByDate(newUsageData, date: date)
+        }
     }
 }

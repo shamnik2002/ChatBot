@@ -138,6 +138,8 @@ final class ChatMiddleware {
         Task {
             // save to cache
             await cache.addChatsToConversation(chats, conversationID: conversationID)
+            await cache.addUsageTotalByDate(usageData, date: Date())
+            await cache.addUsageTotalByConversation(usageData, conversationID: conversationID)
             // create action for state to publish
             let setChatResponse = SetChatResponse(conversationID: conversationID, chats: chats, error: nil)
             dispatch(setChatResponse)
