@@ -8,6 +8,13 @@ You need to add your own API_Key in `OpenAIContants` struct if you want to use a
 If you would rather not, you could still try this app using mock responses.
 
 
+# New Additions
+- 🧠 1. Model Switching You can now switch between multiple OpenAI models directly in the app — making it easy to compare responses.
+![modelSwitching](https://github.com/user-attachments/assets/da52239a-9d9a-4484-ac2e-0b93e4c2231c)
+
+📊 2. Usage Metrics Charts Beautiful Swift charts to view input/output token usage by chat, conversation, or date. 
+![charts](https://github.com/user-attachments/assets/3a0f3946-73cb-4c92-8c21-b1cb9bd4304f)
+
 # Demo
 
 ## Create Conversation
