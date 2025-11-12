@@ -160,3 +160,14 @@ nonisolated final class UsageDataModel: Hashable, Identifiable {
         lhs.id == rhs.id
     }
 }
+
+enum UsageTotalsType {
+    case conversation(conversationID: String)
+    case date(date: Date)
+}
+
+struct UsageTotals {
+    let type: UsageTotalsType
+    let inputTokensTotal: Int
+    let outputTokensTotal: Int
+}

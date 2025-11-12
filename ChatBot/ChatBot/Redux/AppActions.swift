@@ -121,10 +121,14 @@ struct GetUsageByChat: UsageAction {
 
 struct GetUsageByConversation: UsageAction {
     let conversationId: String
+    let pageLimit: Int
+    let pageOffset: Int
 }
 
 struct GetUsageByDate: UsageAction {
     let date: TimeInterval
+    let pageLimit: Int
+    let pageOffset: Int
 }
 
 struct SetUsage: UsageMutatingAction {
@@ -132,4 +136,11 @@ struct SetUsage: UsageMutatingAction {
     let originalAction: UsageAction
 }
 
+struct GetUsageTotal: UsageAction {
+    let type: UsageTotalsType
+}
 
+struct SetUsageTotal: UsageMutatingAction {
+    let usageTotal: UsageTotals
+    let isFinished: Bool
+}

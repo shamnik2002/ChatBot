@@ -13,7 +13,9 @@ import Combine
 actor CBCache {
     private var conversations: [ConversationDataModel] = []
     private var chats: [String:[ChatDataModel]] = [:]
-    
+    private var usageTotalsByDate = LRUCache<Date, UsageTotals>(capacity: 10)
+    private var usageTotalsByConversation = LRUCache<String, UsageTotals>(capacity: 10)
+
     func getConversations() -> [ConversationDataModel] {
         return conversations
     }
@@ -63,4 +65,19 @@ actor CBCache {
         return chatDataModels.sorted { $0.date < $1.date }
     }
     
+    func getUsageTotalByConversation(_ conversationID: String) -> UsageTotals? {
+        return usageTotalsByConversation.getValue(conversationID)
+    }
+    
+    func getUsageTotalByDate(_ date: Date) -> UsageTotals? {
+        return usageTotalsByDate.getValue(date)
+    }
+    
+    func setUsageTotalByConversation(_ data: UsageTotals, conversationID: String) {
+        usageTotalsByConversation.setValue(data, key: conversationID)
+    }
+    
+    func setUsageTotalByDate(_ data: UsageTotals, date: Date) {
+        usageTotalsByDate.setValue(data, key: date)
+    }
 }

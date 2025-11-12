@@ -23,31 +23,45 @@ final class UsageChartByConversationViewModel: ObservableObject {
         appStore.usageState.usagePublisher
             .receive(on: RunLoop.main)
             .sink {[weak self] (action, data) in
+                guard let self, let chatDataModel else {return}
                 switch action {
-                    case _ as GetUsageByConversation:
-                        self?.usageData = data
-                        self?.calculateTotals()
+                case let action as GetUsageByConversation where chatDataModel.conversationID == action.conversationId:
+                        self.usageData = data
 
                     default:
                         break
                 }
             }.store(in: &cancellables)
+        
+        appStore.usageState.usageTotalsPublisher
+            .receive(on: RunLoop.main)
+            .sink {[weak self] usageTotals in
+                guard let self, let chatDataModel else {return}
+                switch usageTotals.type {
+                case let .conversation(conversationID: conversationID) where chatDataModel.conversationID == conversationID:
+                        self.inputTotalString = "\(usageTotals.inputTokensTotal.formatted(.number))"
+                        self.outputTotalString = "\(usageTotals.outputTokensTotal.formatted(.number))"
+                    default:
+                        break
+                }
+            }.store(in: &cancellables)
         fetchUsageDataByConversation()
+        fetchUsageTotals()
         /*
          // For testing
         self.usageData = mockConvoUsageDataModel()
          */
     }
     
-    func calculateTotals() {
-        let (input, output) = usageData.calculateTotals()
-        inputTotalString = "\(input.formatted(.number))"
-        outputTotalString = "\(output.formatted(.number))"
+    func fetchUsageTotals() {
+        guard let chatDataModel else {return}
+        let action = GetUsageTotal(type: UsageTotalsType.conversation(conversationID: chatDataModel.conversationID))
+        appStore.dispacther.dispatch(action)
     }
     
     func fetchUsageDataByConversation() {
         guard let chatDataModel else { return }
-        let action = GetUsageByConversation(conversationId: chatDataModel.conversationID)
+        let action = GetUsageByConversation(conversationId: chatDataModel.conversationID, pageLimit: 50, pageOffset: 0)
         appStore.dispacther.dispatch(action)
     }
 }

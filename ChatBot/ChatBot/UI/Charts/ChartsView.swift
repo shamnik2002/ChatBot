@@ -19,6 +19,16 @@ final class ChartsViewModel: ObservableObject, Identifiable {
         self.appStore = appStore
         self.chatDataModel = chatDataModel        
     }
+    
+    func dateForChart() -> String {
+        guard let timeInterval = chatDataModel?.date else { return "Usage by date"}
+        let date = Date(timeIntervalSince1970: timeInterval)
+        let dateStr = date.shortRelativeDate()
+        if dateStr == "today" {
+            return "Usage today"
+        }
+        return "Usage on \(dateStr)"
+    }
 }
 
 struct ChartsView: View {
@@ -44,7 +54,7 @@ struct ChartsView: View {
                 UsageLineChart(viewModel: UsageChartByDateViewModel(appStore: viewModel.appStore, chatDataModel: viewModel.chatDataModel))
                     .frame(minHeight: 200)
                     .padding(chartPadding)
-                Text("Usage by date")
+                Text(viewModel.dateForChart())
                     .padding(chartTitlePadding)
             }
             .navigationTitle("Usage Charts")

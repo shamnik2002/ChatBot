@@ -14,30 +14,64 @@ final class UsageChartByDateViewModel: ObservableObject {
     @Published var usageData: [UsageDataModel] = []
     @Published var inputTotalString:String = ""
     @Published var outputTotalString:String = ""
+    
     private var appStore: AppStore
     private var chatDataModel: ChatDataModel?
     private var cancellables = Set<AnyCancellable>()
-    
-    init(appStore: AppStore, chatDataModel: ChatDataModel? = nil) {
+    private var hasMore = true
+    private let pageLimit = 50
+    private let pageOffset = 0
+    private var date: Date?
+    init(appStore: AppStore, chatDataModel: ChatDataModel?) {
         self.appStore = appStore
         self.chatDataModel = chatDataModel
+        if let chatDataModel {
+            self.date = Date(timeIntervalSince1970: chatDataModel.date)
+        }
         appStore.usageState.usagePublisher
             .receive(on: RunLoop.main)
             .sink {[weak self] (action, data) in
+                guard let self, let chatDataModel else {return}
                 switch action {
-                    case _ as GetUsageByDate:
-                        self?.usageData = data
-                        self?.calculateTotals()
+                case let action as GetUsageByDate where action.date == chatDataModel.date:
+                        guard !data.isEmpty else { return }
+                        self.usageData += data
 
                     default:
                         break
                 }
             }.store(in: &cancellables)
+        
+        appStore.usageState.usageTotalsPublisher
+            .receive(on: RunLoop.main)
+            .sink {[weak self] usageTotals in
+                guard let self else {return}
+                switch usageTotals.type {
+                    case let .date(date: date) where self.date == date:
+                        self.inputTotalString = "\(usageTotals.inputTokensTotal.formatted(.number))"
+                        self.outputTotalString = "\(usageTotals.outputTokensTotal.formatted(.number))"
+                    default:
+                        break
+                }
+            }.store(in: &cancellables)
         fetchUsageDataByDate()
+        fetchUsageTotals()
         /*
          // For testing
          self.usageData = mockDateUsageDataModel()
          */
+    }
+    
+    func fetchUsageTotals() {
+        guard let date else {return}
+        let action = GetUsageTotal(type: UsageTotalsType.date(date: date))
+        appStore.dispacther.dispatch(action)
+    }
+    
+    func fetchUsageDataByDate() {
+        guard let chatDataModel else { return }
+        let action = GetUsageByDate(date: chatDataModel.date, pageLimit: pageLimit, pageOffset: pageOffset)
+        appStore.dispacther.dispatch(action)
     }
     
     func calculateTotals() {
@@ -45,51 +79,50 @@ final class UsageChartByDateViewModel: ObservableObject {
         inputTotalString = "\(input.formatted(.number))"
         outputTotalString = "\(output.formatted(.number))"
     }
-    
-    func fetchUsageDataByDate() {
-        guard let chatDataModel else { return }
-        let action = GetUsageByDate(date: chatDataModel.date)
-        appStore.dispacther.dispatch(action)
-    }
 }
 
 struct UsageLineChart: View {
     @ObservedObject var viewModel: UsageChartByDateViewModel
     
     var body: some View {
-        Chart {
-            ForEach(viewModel.usageData, id: \.id) { data in
-                LineMark (
-                    x: .value("date",  Date(timeIntervalSince1970: data.date)),
-                    y: .value("input", data.inputTokens),
-                    series: .value("input", "InputTokens")
-                ).foregroundStyle(.blue)
-                    .symbol{
-                        Circle()
-                            .fill(Color.blue.opacity(0.6))
-                            .frame(width: 8)
-                    }
-                                    
-                LineMark (
-                    x: .value("date", Date(timeIntervalSince1970: data.date)),
-                    y: .value("output", data.outputTokens),
-                    series: .value("output", "OutputTokens")
-                ).foregroundStyle(.green)
-                    .symbol{
-                        Circle()
-                            .fill(Color.green.opacity(0.6))
-                            .frame(width: 8)
-                    }
-            }
-        }.chartXAxisLabel("date")
-        .chartYAxisLabel("tokens")
-        .chartXAxis {
-                axisMarksForDate()
-            }
-        .chartForegroundStyleScale([
-                "input \(viewModel.inputTotalString)": Color.blue,
-                "output \(viewModel.outputTotalString)": Color.green
-            ])
+        VStack(alignment: .leading) {
+            Chart {
+                ForEach(viewModel.usageData, id: \.id) { data in
+                    LineMark (
+                        x: .value("date",  Date(timeIntervalSince1970: data.date)),
+                        y: .value("input", data.inputTokens),
+                        series: .value("input", "InputTokens")
+                    ).foregroundStyle(.blue)
+                        .symbol{
+                            Circle()
+                                .fill(Color.blue.opacity(0.6))
+                                .frame(width: 8)
+                        }
+                                        
+                    LineMark (
+                        x: .value("date", Date(timeIntervalSince1970: data.date)),
+                        y: .value("output", data.outputTokens),
+                        series: .value("output", "OutputTokens")
+                    ).foregroundStyle(.green)
+                        .symbol{
+                            Circle()
+                                .fill(Color.green.opacity(0.6))
+                                .frame(width: 8)
+                        }
+                }
+            }.chartXAxisLabel("date")
+            .chartYAxisLabel("tokens")
+            .chartXAxis {
+                    axisMarksForDate()
+                }
+            .chartForegroundStyleScale([
+                    "input \(viewModel.inputTotalString)": Color.blue,
+                    "output \(viewModel.outputTotalString)": Color.green
+                ])
+            Text("shows 50 recent data on graph, totals reflect all data")
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+        }
     }
     
     // show specific labels on x axis

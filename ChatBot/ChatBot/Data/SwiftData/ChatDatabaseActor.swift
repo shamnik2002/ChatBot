@@ -167,28 +167,32 @@ actor ChatDatabaseActor {
         return usageData
     }
     
-    func getUsageDataForConversation(_ conversationID: String) -> [UsageDataModel] {
+    func getUsageDataForConversation(_ conversationID: String, fetchLimit: Int, fetchOffset: Int) -> [UsageDataModel] {
         var usageData = [UsageDataModel]()
-        let descriptor = FetchDescriptor<UsageModel>(
+        var descriptor = FetchDescriptor<UsageModel>(
             predicate: #Predicate{$0.conversationID == conversationID},
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
+        descriptor.fetchLimit = fetchLimit
+        descriptor.fetchOffset = fetchOffset
         if let data = try? modelContext.fetch(descriptor) {
             usageData = data.map{UsageDataModel(id: $0.id, conversationID: $0.conversationID, chatMessageID: $0.chatMessageID, modelId: $0.modelId, modelProviderId: $0.modelProviderId, inputTokens: $0.inputTokens, outputTokens: $0.outputTokens, date: $0.date, duration: $0.duration)}
         }
         return usageData
     }
     
-    func getUsageDataForDate(_ date: TimeInterval) async -> [UsageDataModel] {
+    func getUsageDataForDate(_ date: TimeInterval, fetchLimit: Int, fetchOffset: Int) async -> [UsageDataModel] {
         var usageData = [UsageDataModel]()
         let startDate = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: date))
         let startTimeInterval = startDate.timeIntervalSince1970
         let endDate = await startDate.dayAfter
         let endTimeInterval = endDate.timeIntervalSince1970
-        let descriptor = FetchDescriptor<UsageModel>(
+        var descriptor = FetchDescriptor<UsageModel>(
             predicate: #Predicate{startTimeInterval <= $0.date && $0.date < endTimeInterval},
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
+        descriptor.fetchLimit = fetchLimit
+        descriptor.fetchOffset = fetchOffset
         if let data = try? modelContext.fetch(descriptor) {
             usageData = data.map{UsageDataModel(id: $0.id, conversationID: $0.conversationID, chatMessageID: $0.chatMessageID, modelId: $0.modelId, modelProviderId: $0.modelProviderId, inputTokens: $0.inputTokens, outputTokens: $0.outputTokens, date: $0.date, duration: $0.duration)}
         }
